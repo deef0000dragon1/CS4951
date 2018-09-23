@@ -14,11 +14,16 @@ int main(){
 
 	//initialize GPIO pins from SoC
 		*(GPIO_A + GPIO_MODER) &= ~(0x3F << 26);
-		*(GPIO_A + GPIO_MODER) |= (0x15 << 26);
-
+		*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
 
 	//initialize some test pin for received data
-
+		*(GPIO_A + GPIO_MODER) |= (0x15 << 26);
+		*(GPIO_A + GPIO_MODER) |= (0x0 << 0);
+	//set up the interrupt for it
+		*(SYSCFG_CR1) &= ~(0x7 << 0);
+		*(EXTI_BASE + EXTI_IMR) |= 0x1;
+		*(EXTI_BASE + EXTI_RTSR) |= 0x1;
+		*(EXTI_BASE + EXTI_FTSR) |= 0x1;
 	//initialize the timer for interrupt
 
 

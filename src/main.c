@@ -84,7 +84,22 @@ void setLED(void)
 
 void initializeTimer()
 {
+	//enables timer
 	*(RCC_APB1) |= 1;
+
+
+	//set one pulse mode and climbing mode
+	*(TIM2) |= (1 << 3);
+	*(TIM2) &= ~(1 << 4);
+
+	//Enable Interupt
+	*(TIM2 + TIM_DIER) |= (1 << 6);
+
+	//set maximum to 44K
+	*(TIM2 + TIM_ARR) = (44000);
+
+	//Set timer value
+	*(TIM2 + TIM_CNT) = (0);
 
 	//turn on timer
 	//set the timer time
@@ -93,6 +108,10 @@ void initializeTimer()
 
 void timerISR()
 {
+	//force clear interupt flag. 
+	*(TIM2 + TIM_SR) &= ~(1 << 6);
+
+
 	//timeout on the manch encoding
 	//determine pin state
 	//if 1, set idle
@@ -107,14 +126,14 @@ void restTimer()
 	*(TIM2) &= ~(1 << 0);
 
 	//set one pulse mode and climbing mode
-	*(TIM2) |= (1 << 3);
-	*(TIM2) &= ~(1 << 4);
+	//*(TIM2) |= (1 << 3);
+	//*(TIM2) &= ~(1 << 4);
 
 	//Enable Interupt
-	*(TIM2 + TIM_DIER) |= (1 << 6);
+	//*(TIM2 + TIM_DIER) |= (1 << 6);
 
 	//set maximum to 44K
-	*(TIM2 + TIM_ARR) = (44000);
+	//*(TIM2 + TIM_ARR) = (44000);
 
 	//Set timer value
 	*(TIM2 + TIM_CNT) = (0);

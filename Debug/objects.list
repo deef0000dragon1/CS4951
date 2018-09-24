@@ -1,4 +1,3 @@
-"src/adc.o"
 "src/delay.o"
 "src/lcd.o"
 "src/lcd_driver.o"

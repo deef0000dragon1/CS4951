@@ -135,7 +135,7 @@ g_pfnVectors:
   .word	RTC_WKUP_IRQHandler          			/* RTC Wakeup interrupt through the EXTI line                         */
   .word	FLASH_IRQHandler             			/* Flash global interrupt                                             */
   .word	RCC_IRQHandler               			/* RCC global interrupt                                               */
-  .word	EXTI0_IRQHandler             			/* EXTI Line0 interrupt                                               */
+  .word	pinISR			             			/* EXTI Line0 interrupt                                               */
   .word	EXTI1_IRQHandler             			/* EXTI Line1 interrupt                                               */
   .word	EXTI2_IRQHandler             			/* EXTI Line2 interrupt                                               */
   .word	EXTI3_IRQHandler             			/* EXTI Line3 interrupt                                               */
@@ -157,7 +157,7 @@ g_pfnVectors:
   .word	TIM1_UP_TIM10_IRQHandler     			/* TIM1 Update interrupt and TIM10 global interrupt                   */
   .word	TIM1_TRG_COM_TIM11_IRQHandler			/* TIM1 Trigger and Commutation interrupts and TIM11 global interrupt */
   .word	TIM1_CC_IRQHandler           			/* TIM1 Capture Compare interrupt                                     */
-  .word	TIM2_IRQHandler              			/* TIM2 global interrupt                                              */
+  .word	timerISR		              			/* TIM2 global interrupt                                              */
   .word	TIM3_IRQHandler              			/* TIM3 global interrupt                                              */
   .word	TIM4_IRQHandler              			/* TIM4 global interrupt                                              */
   .word	I2C1_EV_IRQHandler           			/* I2C1 event interrupt                                               */

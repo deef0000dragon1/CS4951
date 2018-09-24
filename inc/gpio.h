@@ -11,6 +11,7 @@
 #define GPIO_A (volatile uint32_t*) 0x40020000
 #define GPIO_B (volatile uint32_t*) 0x40020400
 #define GPIO_C (volatile uint32_t*) 0x40020800
+#define GPIO_D (volatile uint32_t*) 0x40020C00
 
 #define GPIO_A_EN (1<<0)
 #define GPIO_B_EN (1<<1)

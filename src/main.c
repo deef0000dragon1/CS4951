@@ -19,33 +19,56 @@ int main()
 	//initialization of the gpio pins and the timer here first
 
 	//initialize GPIO pins from SoC
-	*(RCC_AHB1) |= 0x1;
+	*(RCC_AHB1) |= 0xF;//enable a-d
 
-	*(GPIO_A + GPIO_MODER) &= ~(0x3F << 26);
-	*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
+	*(GPIO_A + GPIO_MODER) &= ~(0x3F << 10);
+	*(GPIO_A + GPIO_MODER) |= (0x15 << 10);
+
 
 	//initialize some test pin for received data
-	*(GPIO_A + GPIO_MODER) |= (0x15 << 26);
-	*(GPIO_A + GPIO_MODER) |= (0x0 << 0);
+	*(GPIO_C + GPIO_MODER) &= ~(0x3 << 0);
+	*(GPIO_C + GPIO_MODER) |= (0x0 << 0);
 	//set up the interrupt for it
+	*(RCC_APB2) |= 1<14;
+
 	*(SYSCFG_CR1) &= ~(0x7 << 0);
+	*(SYSCFG_CR1) |= (0x2 << 0);
 	*(EXTI_BASE + EXTI_IMR) |= 0x1;
 	*(EXTI_BASE + EXTI_RTSR) |= 0x1;
 	*(EXTI_BASE + EXTI_FTSR) |= 0x1;
 	//initialize the timer for interrupt
-
+	initializeTimer();
 	//logic for the state stuff and setting up the interrupts
+	globalState = IDLE;
+	setLED();
+	resetTimer();
+	*(EXTI_BASE + EXTI_SWIER) |= 1;
+	while(1){
+		if((*(GPIO_C + GPIO_IDR))&1){
+			globalState = BUSY;
+			setLED();
+		}else{
+			globalState = COLLISION;
+			setLED();
+		}
+	}
 }
 
 void pinISR()
 {
 	//edge of manchester coding
 
-	//set the timer to 1.15 ms
+	//set the timer to 1.1 ms
+	resetTimer();
+	//set the state to busy - we are getting information
+	globalState = BUSY;
 
-	//set the state to idle, cuz nothing is really happening
-
+	//update LEDs
+	setLED();
 	//TODO: add to vector table
+
+	//clear interrupt flag
+	*(EXTI_BASE + EXTI_PR) &= ~(1<<0);
 }
 
 //sets the proper LED for the proper state
@@ -56,28 +79,28 @@ void setLED(void)
 	switch (globalState)
 	{
 	case IDLE:
-		//set the green led A13
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 13;
+		//set the green led A5
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 5;
 
-		//clear the orange and red leds, a14 and a15
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 30;
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 31;
+		//clear the orange and red leds, a6 and a7
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 22;
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 23;
 		break;
 	case BUSY:
 		//set the orange led A14
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 14;
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 6;
 
 		//clear the green and red leds, a13 and a15
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 29;
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 31;
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 21;
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 23;
 		break;
 	case COLLISION:
 		//set the red led A15
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 15;
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 7;
 
 		//clear the green and orange leds, a13 and a14
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 29;
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 30;
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 21;
+		*(GPIO_A + GPIO_BSRR) |= 0x1 << 22;
 		break;
 	}
 }
@@ -89,17 +112,17 @@ void initializeTimer()
 
 
 	//set one pulse mode and climbing mode
-	*(TIM2) |= (1 << 3);
-	*(TIM2) &= ~(1 << 4);
+	*(TIM_2) |= (1 << 3);
+	*(TIM_2) &= ~(1 << 4);
 
 	//Enable Interupt
-	*(TIM2 + TIM_DIER) |= (1 << 6);
+	*(TIM_2 + TIM_DIER) |= (1 << 6);
 
 	//set maximum to 44K
-	*(TIM2 + TIM_ARR) = (44000);
+	*(TIM_2 + TIM_ARR) = (44000);
 
 	//Set timer value
-	*(TIM2 + TIM_CNT) = (0);
+	*(TIM_2 + TIM_CNT) = (0);
 
 	//turn on timer
 	//set the timer time
@@ -109,10 +132,10 @@ void initializeTimer()
 void timerISR()
 {
 	//force clear interupt flag. 
-	*(TIM2 + TIM_SR) &= ~(1 << 6);
+	*(TIM_2 + TIM_SR) &= ~(1 << 6);
 
 	//determine pin state
-	if (*(GPIO_A + GPIO_ODR)) {
+	if (*(GPIO_C + GPIO_IDR)&1) {
 		//if 1, set idle
 		globalState = IDLE;
 	}else{
@@ -120,17 +143,18 @@ void timerISR()
 		globalState = COLLISION;
 	}
 
-
+	//set leds
+	setLED();
 	//timeout on the manch encoding
 	
 
 }
 
-void restTimer()
+void resetTimer()
 {
 
 	//disable
-	*(TIM2) &= ~(1 << 0);
+	*(TIM_2) &= ~(1 << 0);
 
 	//set one pulse mode and climbing mode
 	//*(TIM2) |= (1 << 3);
@@ -143,9 +167,9 @@ void restTimer()
 	//*(TIM2 + TIM_ARR) = (44000);
 
 	//Set timer value
-	*(TIM2 + TIM_CNT) = (0);
+	*(TIM_2 + TIM_CNT) = (0);
 
 	//Enable Timer
-	*(TIM2) |= (1 << 0);
+	*(TIM_2) |= (1 << 0);
 
 }

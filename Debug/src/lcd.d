@@ -1,9 +1,9 @@
-src/lcd.o: ../src/lcd.c C:/Users/gelharrs/workspace/NetworkingI/inc/lcd.h \
- C:/Users/gelharrs/workspace/NetworkingI/inc/gpio.h \
- C:/Users/gelharrs/workspace/NetworkingI/inc/delay.h
+src/lcd.o: ../src/lcd.c C:/Users/gelharrs/workspace/Networking1/inc/lcd.h \
+ C:/Users/gelharrs/workspace/Networking1/inc/gpio.h \
+ C:/Users/gelharrs/workspace/Networking1/inc/delay.h
 
-C:/Users/gelharrs/workspace/NetworkingI/inc/lcd.h:
+C:/Users/gelharrs/workspace/Networking1/inc/lcd.h:
 
-C:/Users/gelharrs/workspace/NetworkingI/inc/gpio.h:
+C:/Users/gelharrs/workspace/Networking1/inc/gpio.h:
 
-C:/Users/gelharrs/workspace/NetworkingI/inc/delay.h:
+C:/Users/gelharrs/workspace/Networking1/inc/delay.h:

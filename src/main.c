@@ -42,8 +42,12 @@ void pinISR(){
 
 void timerISR(){
 	//timeout on the manch encoding
+
+
+	//if the time is greater than the max time, or shorter than the min, trigger colission
+
+	//otherwise, reset timer
 	
-	//if the level is 1, state is idle - otherwise, collision
 }
 
 //sets the proper LED for the proper state
@@ -58,5 +62,13 @@ void setLED(void){
 		case COLLISION:
 			break;
 	}
+
+}
+
+void initializeTimer(){
+
+}
+
+void restTimer(){
 
 }

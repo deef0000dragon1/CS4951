@@ -54,10 +54,28 @@ void setLED(void){
 
 	switch(globalState){
 		case IDLE:
+			//set the green led A13
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<13;
+
+			//clear the orange and red leds, a14 and a15
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<30;
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<31;
 			break;
 		case BUSY:
+			//set the orange led A14
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<14;
+
+			//clear the green and red leds, a13 and a15
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<29;
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<31;
 			break;
 		case COLLISION:
+			//set the red led A15
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<15;
+
+			//clear the green and orange leds, a13 and a14
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<29;
+				*(GPIO_A + GPIO_BSRR) |= 0x1<<30;
 			break;
 	}
 

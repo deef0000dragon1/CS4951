@@ -111,11 +111,18 @@ void timerISR()
 	//force clear interupt flag. 
 	*(TIM2 + TIM_SR) &= ~(1 << 6);
 
+	//determine pin state
+	if (*(GPIO_A + GPIO_ODR)) {
+		//if 1, set idle
+		globalState = IDLE;
+	}else{
+		//if 0, set colission
+		globalState = COLLISION;
+	}
+
 
 	//timeout on the manch encoding
-	//determine pin state
-	//if 1, set idle
-	//if 0, set colission
+	
 
 }
 

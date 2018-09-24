@@ -42,15 +42,7 @@ void pinISR(){
 	//TODO: add to vector table
 }
 
-void timerISR(){
-	//timeout on the manch encoding
 
-
-	//if the time is greater than the max time, or shorter than the min, trigger colission
-
-	//otherwise, reset timer
-	
-}
 
 //sets the proper LED for the proper state
 //idle is green, busy is orange, collision is red
@@ -68,9 +60,18 @@ void setLED(void){
 }
 
 void initializeTimer(){
+	//turn on timer
+	//set the timer time
+	//set timer interupt (timerISR)
+}
 
+void timerISR(){
+	//timeout on the manch encoding
+	//determine pin state
+	//if 1, set idle
+	//if 0, set colission
 }
 
 void restTimer(){
-
+	//reset timer value
 }

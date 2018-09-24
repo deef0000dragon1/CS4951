@@ -97,6 +97,7 @@ void timerISR()
 	//determine pin state
 	//if 1, set idle
 	//if 0, set colission
+
 }
 
 void restTimer()

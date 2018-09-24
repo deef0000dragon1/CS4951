@@ -13,6 +13,8 @@ int main(){
 	//initialization of the gpio pins and the timer here first
 
 	//initialize GPIO pins from SoC
+		*(RCC_AHB1) |= 0x1;
+
 		*(GPIO_A + GPIO_MODER) &= ~(0x3F << 26);
 		*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
 
@@ -33,7 +35,7 @@ int main(){
 void pinISR(){
 	//edge of manchester coding
 
-	//set the timer to 1.1 ms
+	//set the timer to 1.15 ms
 
 	//set the state to idle, cuz nothing is really happening
 	

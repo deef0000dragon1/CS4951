@@ -41,16 +41,17 @@ int main()
 	*(EXTI_BASE + EXTI_FTSR) |= 0x1;
 	//clear the pending flag if any
 	*(EXTI_BASE + EXTI_PR) |= 0x1;
+	*(TIM_2 + TIM_SR) |= (1 << 6);
 	//enable EXTi0 IMPORTANT!!!
 	*(NVIC_ISER0) |= (1<<6);
-	//enable TIM2
-	*(NVIC_ISER0) |= (1<<28);
 
 	//enable in software IMPORTANT!!!
 	asm("CPSIE i\n\t");
 
 	//initialize the timer for interrupt
+
 	initializeTimer();
+
 	//logic for the state stuff and setting up the interrupts
 	globalState = IDLE;
 	setLED();
@@ -58,13 +59,12 @@ int main()
 	*(EXTI_BASE + EXTI_SWIER) |= 1;
 
 	while(1){
-		if((*(GPIO_C + GPIO_IDR))&1){
-			globalState = BUSY;
-			setLED();
+		/*if(*(GPIO_A + GPIO_IDR)&1){
+			globalState = IDLE;
 		}else{
 			globalState = COLLISION;
-			setLED();
 		}
+		setLED();*/
 	}
 }
 
@@ -77,9 +77,14 @@ void pinISR()
 	//set the state to busy - we are getting information
 	globalState = BUSY;
 
+	if(*(GPIO_C + GPIO_IDR)&1){
+		globalState = IDLE;
+	}else{
+		globalState = COLLISION;
+	}
 	//update LEDs
 	setLED();
-	//TODO: add to vector table
+
 
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1<<0);
@@ -121,69 +126,18 @@ void setLED(void)
 
 void initializeTimer()
 {
-	//enables timer
-	*(RCC_APB1) |= 1;
 
-
-	//set one pulse mode and climbing mode
-	*(TIM_2) |= (1 << 3);
-	*(TIM_2) &= ~(1 << 4);
-
-	//Enable Interupt
-	*(TIM_2 + TIM_DIER) |= (1 << 6);
-
-	//set maximum to 44K
-	*(TIM_2 + TIM_ARR) = (44000);
-
-	//Set timer value
-	*(TIM_2 + TIM_CNT) = (0);
-
-	//turn on timer
-	//set the timer time
-	//set timer interupt (timerISR)
 }
 
 void timerISR()
 {
-	//force clear interupt flag. 
-	*(TIM_2 + TIM_SR) &= ~(1 << 6);
 
-	//determine pin state
-	if (*(GPIO_C + GPIO_IDR)&1) {
-		//if 1, set idle
-		globalState = IDLE;
-	}else{
-		//if 0, set colission
-		globalState = COLLISION;
-	}
-
-	//set leds
-	setLED();
-	//timeout on the manch encoding
-	resetTimer();
 
 }
 
 void resetTimer()
 {
 
-	//disable
-	*(TIM_2) &= ~(1 << 0);
 
-	//set one pulse mode and climbing mode
-	//*(TIM2) |= (1 << 3);
-	//*(TIM2) &= ~(1 << 4);
-
-	//Enable Interupt
-	//*(TIM2 + TIM_DIER) |= (1 << 6);
-
-	//set maximum to 44K
-	//*(TIM2 + TIM_ARR) = (44000);
-
-	//Set timer value
-	*(TIM_2 + TIM_CNT) = (0);
-
-	//Enable Timer
-	*(TIM_2) |= (1 << 0);
 
 }

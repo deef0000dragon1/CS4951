@@ -3,7 +3,7 @@
   * @file      startup_stm32.s dedicated to STM32F446RETx device
   * @author    Ac6
   * @version   V1.0.0
-  * @date      2018-09-18
+  * @date      2018-04-25
   ******************************************************************************
   */
 

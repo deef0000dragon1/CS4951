@@ -1,5 +1,5 @@
+"src/adc.o"
 "src/delay.o"
-"src/lcd.o"
 "src/lcd_driver.o"
 "src/main.o"
 "startup/startup_stm32.o"

@@ -31,6 +31,7 @@
 
 #define SYSCFG_CR1 (volatile uint32_t*) 0x40013808
 
+#define NVIC_ISER0 (volatile uint32_t*) 0xE000E100
 
 #define GPIO_MODER 0x0
 #define GPIO_IDR 0x4

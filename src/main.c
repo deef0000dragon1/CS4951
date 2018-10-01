@@ -29,13 +29,26 @@ int main()
 	*(GPIO_C + GPIO_MODER) &= ~(0x3 << 0);
 	*(GPIO_C + GPIO_MODER) |= (0x0 << 0);
 	//set up the interrupt for it
-	*(RCC_APB2) |= 1<14;
+	*(RCC_APB2) |= 1<<14;
 
+	//syscfg allows interrupts in hardware
 	*(SYSCFG_CR1) &= ~(0x7 << 0);
 	*(SYSCFG_CR1) |= (0x2 << 0);
+	//imr allows the interrupt in exti
 	*(EXTI_BASE + EXTI_IMR) |= 0x1;
+	//rising edge and falling edge enable
 	*(EXTI_BASE + EXTI_RTSR) |= 0x1;
 	*(EXTI_BASE + EXTI_FTSR) |= 0x1;
+	//clear the pending flag if any
+	*(EXTI_BASE + EXTI_PR) |= 0x1;
+	//enable EXTi0 IMPORTANT!!!
+	*(NVIC_ISER0) |= (1<<6);
+	//enable TIM2
+	*(NVIC_ISER0) |= (1<<28);
+
+	//enable in software IMPORTANT!!!
+	asm("CPSIE i\n\t");
+
 	//initialize the timer for interrupt
 	initializeTimer();
 	//logic for the state stuff and setting up the interrupts
@@ -43,6 +56,7 @@ int main()
 	setLED();
 	resetTimer();
 	*(EXTI_BASE + EXTI_SWIER) |= 1;
+
 	while(1){
 		if((*(GPIO_C + GPIO_IDR))&1){
 			globalState = BUSY;
@@ -68,7 +82,7 @@ void pinISR()
 	//TODO: add to vector table
 
 	//clear interrupt flag
-	*(EXTI_BASE + EXTI_PR) &= ~(1<<0);
+	*(EXTI_BASE + EXTI_PR) |= (1<<0);
 }
 
 //sets the proper LED for the proper state
@@ -146,7 +160,7 @@ void timerISR()
 	//set leds
 	setLED();
 	//timeout on the manch encoding
-	
+	resetTimer();
 
 }
 

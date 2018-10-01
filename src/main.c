@@ -117,13 +117,17 @@ void initializeTimer()
 	*(STK_CTRL) = CLKSOURCE | ENABLE | TICKINT; // System clock is clock s
 }
 
+//timer has gone beyond the expected value. 
 void timerISR()
 {
+
+	//disable timer
 	*(STK_CTRL) &= ~(ENABLE);
 
+	//if input is 1, set state idle
 	if(*(GPIO_A + GPIO_IDR)&1){
 		globalState = IDLE;
-	}else{
+	}else{ //else set state colission. 
 		globalState = COLLISION;
 	}
 
@@ -133,10 +137,13 @@ void timerISR()
 
 void resetTimer()
 {
+	//disable timer
 	*(STK_CTRL) &= ~(ENABLE);
 
 	*(STK_LOAD) = 1808000;
 
+
+	//enable timer.
 	*(STK_CTRL) |= ENABLE;
 
 }

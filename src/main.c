@@ -26,14 +26,14 @@ int main()
 
 
 	//initialize some test pin for received data
-	*(GPIO_C + GPIO_MODER) &= ~(0x3 << 0);
-	*(GPIO_C + GPIO_MODER) |= (0x0 << 0);
+	*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
+	*(GPIO_A + GPIO_MODER) |= (0x0 << 0);
 	//set up the interrupt for it
 	*(RCC_APB2) |= 1<<14;
 
 	//syscfg allows interrupts in hardware
 	*(SYSCFG_CR1) &= ~(0x7 << 0);
-	*(SYSCFG_CR1) |= (0x2 << 0);
+	*(SYSCFG_CR1) |= (0x0 << 0);
 	//imr allows the interrupt in exti
 	*(EXTI_BASE + EXTI_IMR) |= 0x1;
 	//rising edge and falling edge enable
@@ -72,22 +72,21 @@ void pinISR()
 {
 	//edge of manchester coding
 
-	//set the timer to 1.1 ms
-	resetTimer();
+
+
+	//temp disable timer
+	*(STK_CTRL) &= ~(ENABLE);
 	//set the state to busy - we are getting information
 	globalState = BUSY;
 
-	if(*(GPIO_C + GPIO_IDR)&1){
-		globalState = IDLE;
-	}else{
-		globalState = COLLISION;
-	}
 	//update LEDs
 	setLED();
 
 
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1<<0);
+
+	resetTimer();
 }
 
 //sets the proper LED for the proper state
@@ -98,46 +97,46 @@ void setLED(void)
 	switch (globalState)
 	{
 	case IDLE:
-		//set the green led A5
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 5;
-
-		//clear the orange and red leds, a6 and a7
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 22;
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 23;
+		//set the green led, clear orange and red
+		*(GPIO_A + GPIO_BSRR) = (0x1 << 5)|(0x1 << 22)|(0x1 << 23);
 		break;
 	case BUSY:
 		//set the orange led A14
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 6;
-
-		//clear the green and red leds, a13 and a15
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 21;
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 23;
+		*(GPIO_A + GPIO_BSRR) = (0x1 << 6)|(0x1 << 21)|(0x1 << 23);
 		break;
 	case COLLISION:
 		//set the red led A15
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 7;
-
-		//clear the green and orange leds, a13 and a14
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 21;
-		*(GPIO_A + GPIO_BSRR) |= 0x1 << 22;
+		*(GPIO_A + GPIO_BSRR) = (0x1 << 7)|(0x1 << 21)|(0x1 << 22);
 		break;
 	}
 }
 
 void initializeTimer()
 {
-
+	*(STK_LOAD) = 1808000;  // number of cycles for 1.1ms.
+	*(STK_CTRL) = CLKSOURCE | ENABLE | TICKINT; // System clock is clock s
 }
 
 void timerISR()
 {
+	*(STK_CTRL) &= ~(ENABLE);
 
+	if(*(GPIO_A + GPIO_IDR)&1){
+		globalState = IDLE;
+	}else{
+		globalState = COLLISION;
+	}
 
+	setLED();
+	resetTimer();
 }
 
 void resetTimer()
 {
+	*(STK_CTRL) &= ~(ENABLE);
 
+	*(STK_LOAD) = 1808000;
 
+	*(STK_CTRL) |= ENABLE;
 
 }

@@ -128,7 +128,7 @@ g_pfnVectors:
   .word	DebugMon_Handler
   .word	0
   .word	PendSV_Handler
-  .word	SysTick_Handler
+  .word	timerISR
   .word	WWDG_IRQHandler              			/* Window Watchdog interrupt                                          */
   .word	0                            			/* Reserved                                                           */
   .word	TAMP_STAMP_IRQHandler        			/* Tamper and TimeStamp interrupts through the EXTI line              */

@@ -33,6 +33,14 @@
 
 #define NVIC_ISER0 (volatile uint32_t*) 0xE000E100
 
+#define STK_CTRL         (volatile uint32_t)0xE000E010
+#define STK_LOAD         (volatile uint32_t)0xE000E014
+#define STK_VAL         (volatile uint32_t*)0xE000E018
+#define STK_CALIB        (volatile uint32_t)0xE000E01C
+#define    CLKSOURCE 1<<2    // Use processor clock (16 Mhz)
+#define    TICKINT 1<<1
+#define    ENABLE 1<<0
+
 #define GPIO_MODER 0x0
 #define GPIO_IDR 0x4
 #define GPIO_ODR 0x5

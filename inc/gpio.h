@@ -42,6 +42,7 @@
 #define    ENABLE 1<<0
 
 #define GPIO_MODER 0x0
+#define GPIO_PUPDR 0X3
 #define GPIO_IDR 0x4
 #define GPIO_ODR 0x5
 #define GPIO_BSRR 0x6

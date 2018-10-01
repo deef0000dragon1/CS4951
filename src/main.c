@@ -82,7 +82,6 @@ void pinISR()
 	//update LEDs
 	setLED();
 
-
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1<<0);
 
@@ -113,7 +112,7 @@ void setLED(void)
 
 void initializeTimer()
 {
-	*(STK_LOAD) = 1808000;  // number of cycles for 1.1ms.
+	*(STK_LOAD) = 18080;  // number of cycles for 1.1ms.
 	*(STK_CTRL) = CLKSOURCE | ENABLE | TICKINT; // System clock is clock s
 }
 
@@ -140,7 +139,7 @@ void resetTimer()
 	//disable timer
 	*(STK_CTRL) &= ~(ENABLE);
 
-	*(STK_LOAD) = 1808000;
+	*(STK_VAL) = 18080;
 
 
 	//enable timer.

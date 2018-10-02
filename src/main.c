@@ -16,6 +16,13 @@ volatile static enum STATE globalState = IDLE;
 
 volatile static int pinVal = 0;
 
+void initializeTimer();
+void resetTimer();
+void pinISR();
+void totalISR();
+void timerISR();
+void setLED();
+
 int main()
 {
 	//initialization of the gpio pins and the timer here first
@@ -23,8 +30,8 @@ int main()
 	//initialize GPIO pins from SoC
 	*(RCC_AHB1) |= 0xF;//enable a-d
 
-	*(GPIO_A + GPIO_MODER) &= ~(0x3F << 10);
-	*(GPIO_A + GPIO_MODER) |= (0x15 << 10);
+	*(GPIO_A + GPIO_MODER) &= ~(0x3FF << 6);
+	*(GPIO_A + GPIO_MODER) |= (0x155 << 6);
 
 
 	//initialize some test pin for received data
@@ -60,12 +67,7 @@ int main()
 	//*(EXTI_BASE + EXTI_SWIER) |= 1;
 
 	while(1){
-		/*if(*(GPIO_A + GPIO_IDR)&1){
-			globalState = IDLE;
-		}else{
-			globalState = COLLISION;
-		}
-		setLED();*/
+
 	}
 }
 
@@ -75,7 +77,7 @@ void pinISR()
 
 
 	//temp disable timer
-	*(STK_CTRL) &= ~(ENABLE);
+	*(STK_CTRL) &= ~(ENABLE|TICKINT);
 
 	//*(STK_VAL) = 18080;
 	//set the state to busy - we are getting information
@@ -124,7 +126,7 @@ void timerISR()
 {
 
 	//disable timer
-	*(STK_CTRL) &= ~(ENABLE);
+	*(STK_CTRL) &= ~(ENABLE|TICKINT);
 
 	//if input is 1, set state idle
 	if(pinVal){
@@ -140,7 +142,6 @@ void timerISR()
 void totalISR()
 {
 	if(*(EXTI_BASE + EXTI_PR)){
-		//pinisr
 		pinISR();
 	}else{
 		timerISR();
@@ -148,16 +149,16 @@ void totalISR()
 
 
 }
-void resetTimer()
+void resetTimer(void)
 {
 	//disable timer
-	*(STK_CTRL) &= ~(ENABLE);
+	*(STK_CTRL) &= ~(ENABLE|TICKINT);
 
-	*(STK_VAL) = 18080;
+	*(STK_VAL) = 180*0;
 
 
 	//enable timer.
-	*(STK_CTRL) |= ENABLE;
+	*(STK_CTRL) |= ENABLE|TICKINT;
 
 	pinVal = *(GPIO_A + GPIO_IDR)&1;
 }

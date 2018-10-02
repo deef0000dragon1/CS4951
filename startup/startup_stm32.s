@@ -128,14 +128,14 @@ g_pfnVectors:
   .word	DebugMon_Handler
   .word	0
   .word	PendSV_Handler
-  .word	timerISR
+  .word	totalISR //timer
   .word	WWDG_IRQHandler              			/* Window Watchdog interrupt                                          */
   .word	0                            			/* Reserved                                                           */
   .word	TAMP_STAMP_IRQHandler        			/* Tamper and TimeStamp interrupts through the EXTI line              */
   .word	RTC_WKUP_IRQHandler          			/* RTC Wakeup interrupt through the EXTI line                         */
   .word	FLASH_IRQHandler             			/* Flash global interrupt                                             */
   .word	RCC_IRQHandler               			/* RCC global interrupt                                               */
-  .word	pinISR			             			/* EXTI Line0 interrupt                                               */
+  .word	totalISR	//pin		             	/* EXTI Line0 interrupt                                               */
   .word	EXTI1_IRQHandler             			/* EXTI Line1 interrupt                                               */
   .word	EXTI2_IRQHandler             			/* EXTI Line2 interrupt                                               */
   .word	EXTI3_IRQHandler             			/* EXTI Line3 interrupt                                               */

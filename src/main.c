@@ -14,6 +14,8 @@ enum STATE
 //we'll need a global variable for the current state
 volatile static enum STATE globalState = IDLE;
 
+volatile static int pinVal = 0;
+
 int main()
 {
 	//initialization of the gpio pins and the timer here first
@@ -55,7 +57,7 @@ int main()
 	globalState = IDLE;
 	setLED();
 	resetTimer();
-	*(EXTI_BASE + EXTI_SWIER) |= 1;
+	//*(EXTI_BASE + EXTI_SWIER) |= 1;
 
 	while(1){
 		/*if(*(GPIO_A + GPIO_IDR)&1){
@@ -72,9 +74,10 @@ void pinISR()
 	//edge of manchester coding
 
 
-
 	//temp disable timer
 	*(STK_CTRL) &= ~(ENABLE);
+
+	//*(STK_VAL) = 18080;
 	//set the state to busy - we are getting information
 	globalState = BUSY;
 
@@ -83,8 +86,9 @@ void pinISR()
 
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1<<0);
-
 	resetTimer();
+
+
 }
 
 //sets the proper LED for the proper state
@@ -119,7 +123,6 @@ void initializeTimer()
 void timerISR()
 {
 
-	int pinVal = *(GPIO_A + GPIO_IDR)&1;
 	//disable timer
 	*(STK_CTRL) &= ~(ENABLE);
 
@@ -134,6 +137,17 @@ void timerISR()
 	resetTimer();
 }
 
+void totalISR()
+{
+	if(*(EXTI_BASE + EXTI_PR)){
+		//pinisr
+		pinISR();
+	}else{
+		timerISR();
+	}
+
+
+}
 void resetTimer()
 {
 	//disable timer
@@ -145,4 +159,5 @@ void resetTimer()
 	//enable timer.
 	*(STK_CTRL) |= ENABLE;
 
+	pinVal = *(GPIO_A + GPIO_IDR)&1;
 }

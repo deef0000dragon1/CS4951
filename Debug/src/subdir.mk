@@ -6,21 +6,18 @@
 C_SRCS += \
 ../src/adc.c \
 ../src/delay.c \
-../src/lcd.c \
 ../src/lcd_driver.c \
 ../src/main.c 
 
 OBJS += \
 ./src/adc.o \
 ./src/delay.o \
-./src/lcd.o \
 ./src/lcd_driver.o \
 ./src/main.o 
 
 C_DEPS += \
 ./src/adc.d \
 ./src/delay.d \
-./src/lcd.d \
 ./src/lcd_driver.d \
 ./src/main.d 
 
@@ -30,7 +27,7 @@ src/%.o: ../src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: MCU GCC Compiler'
 	@echo $(PWD)
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DSTM32 -DSTM32F4 -DSTM32F446RETx -DNUCLEO_F446RE -DDEBUG -I"C:/Users/gelharrs/workspace/Networking1/inc" -O0 -g3 -Wall -fmessage-length=0 -ffunction-sections -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DSTM32 -DSTM32F4 -DSTM32F446RETx -DNUCLEO_F446RE -DDEBUG -I"C:/Users/gelharrs/workspace/transistorStuff/inc" -O0 -g3 -Wall -fmessage-length=0 -ffunction-sections -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

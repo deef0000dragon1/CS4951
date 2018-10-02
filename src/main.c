@@ -41,7 +41,6 @@ int main()
 	*(EXTI_BASE + EXTI_FTSR) |= 0x1;
 	//clear the pending flag if any
 	*(EXTI_BASE + EXTI_PR) |= 0x1;
-	*(TIM_2 + TIM_SR) |= (1 << 6);
 	//enable EXTi0 IMPORTANT!!!
 	*(NVIC_ISER0) |= (1<<6);
 
@@ -120,11 +119,12 @@ void initializeTimer()
 void timerISR()
 {
 
+	int pinVal = *(GPIO_A + GPIO_IDR)&1;
 	//disable timer
 	*(STK_CTRL) &= ~(ENABLE);
 
 	//if input is 1, set state idle
-	if(*(GPIO_A + GPIO_IDR)&1){
+	if(pinVal){
 		globalState = IDLE;
 	}else{ //else set state colission. 
 		globalState = COLLISION;

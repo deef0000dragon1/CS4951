@@ -128,7 +128,7 @@ void timerISR()
 
 	//disable timer
 	*(STK_CTRL) &= ~(ENABLE | TICKINT);
-
+	if(*(STK_VAL)<17000){
 	switch (globalState)
 	{
 	case IDLE:
@@ -152,6 +152,7 @@ void timerISR()
 
 	setLED();
 	resetTimer();
+	}
 
 	*(GPIO_A + GPIO_BSRR) = (0x1<<24);
 }

@@ -30,8 +30,8 @@ int main()
 	//initialize GPIO pins from SoC
 	*(RCC_AHB1) |= 0xF; //enable a-d
 
-	*(GPIO_A + GPIO_MODER) &= ~(0x3FF << 6);
-	*(GPIO_A + GPIO_MODER) |= (0x155 << 6);
+	*(GPIO_A + GPIO_MODER) &= ~(0xFFF << 6);
+	*(GPIO_A + GPIO_MODER) |= (0x555 << 6);
 
 	//initialize some test pin for received data
 	*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
@@ -64,7 +64,6 @@ int main()
 	setLED();
 	resetTimer();
 	//*(EXTI_BASE + EXTI_SWIER) |= 1;
-
 	while (1)
 	{
 	}
@@ -72,14 +71,13 @@ int main()
 
 void pinISR()
 {
+	*(GPIO_A + GPIO_BSRR) = (0x1<<4);
 
-	pinVal = *(GPIO_A + GPIO_IDR) & 1;
 	//edge of manchester coding
 
 	//temp disable timer
 	*(STK_CTRL) &= ~(ENABLE | TICKINT);
 
-	//*(STK_VAL) = 18080;
 	//set the state to busy - we are getting information
 	globalState = BUSY;
 
@@ -90,6 +88,8 @@ void pinISR()
 	
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1 << 0);
+
+	*(GPIO_A + GPIO_BSRR) = (0x1<<20);
 
 }
 
@@ -124,6 +124,7 @@ void initializeTimer()
 //timer has gone beyond the expected value.
 void timerISR()
 {
+	*(GPIO_A + GPIO_BSRR) = (0x1<<8);
 
 	//disable timer
 	*(STK_CTRL) &= ~(ENABLE | TICKINT);
@@ -142,7 +143,7 @@ void timerISR()
 			globalState = IDLE;
 		}
 		else
-		{ //else set state colission.
+		{ //else set state collision.
 			globalState = COLLISION;
 		}
 		break;
@@ -151,6 +152,8 @@ void timerISR()
 
 	setLED();
 	resetTimer();
+
+	*(GPIO_A + GPIO_BSRR) = (0x1<<24);
 }
 
 void totalISR()
@@ -166,10 +169,13 @@ void totalISR()
 }
 void resetTimer(void)
 {
+
+	pinVal = *(GPIO_A + GPIO_IDR) & 1;
+
 	//disable timer
 	*(STK_CTRL) &= ~(ENABLE | TICKINT);
 
-	*(STK_VAL) = 180 * 0;
+	*(STK_VAL) = 18080;
 
 	//enable timer.
 	*(STK_CTRL) |= ENABLE | TICKINT;

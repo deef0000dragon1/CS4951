@@ -6,18 +6,21 @@
 C_SRCS += \
 ../src/adc.c \
 ../src/delay.c \
+../src/lcd.c \
 ../src/lcd_driver.c \
 ../src/main.c 
 
 OBJS += \
 ./src/adc.o \
 ./src/delay.o \
+./src/lcd.o \
 ./src/lcd_driver.o \
 ./src/main.o 
 
 C_DEPS += \
 ./src/adc.d \
 ./src/delay.d \
+./src/lcd.d \
 ./src/lcd_driver.d \
 ./src/main.d 
 

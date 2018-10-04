@@ -86,9 +86,11 @@ void pinISR()
 	//update LEDs
 	setLED();
 
+	resetTimer();
+	
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1 << 0);
-	resetTimer();
+
 }
 
 //sets the proper LED for the proper state

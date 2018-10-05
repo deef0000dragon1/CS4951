@@ -15,6 +15,8 @@ enum STATE
 volatile static enum STATE globalState = IDLE;
 
 volatile static int pinVal = 0;
+volatile static int dummy = 0;
+
 
 void initializeTimer();
 void resetTimer();
@@ -71,7 +73,7 @@ int main()
 
 void pinISR()
 {
-	*(GPIO_A + GPIO_BSRR) = (0x1<<4);
+	*(GPIO_A + GPIO_BSRR) = (0x1 << 4);
 
 	//edge of manchester coding
 
@@ -85,12 +87,11 @@ void pinISR()
 	setLED();
 
 	resetTimer();
-	
+
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1 << 0);
 
-	*(GPIO_A + GPIO_BSRR) = (0x1<<20);
-
+	*(GPIO_A + GPIO_BSRR) = (0x1 << 20);
 }
 
 //sets the proper LED for the proper state
@@ -124,37 +125,38 @@ void initializeTimer()
 //timer has gone beyond the expected value.
 void timerISR()
 {
-	*(GPIO_A + GPIO_BSRR) = (0x1<<8);
+	*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
 
 	//disable timer
-	*(STK_CTRL) &= ~(ENABLE | TICKINT);
-	if(*(STK_VAL)<17000){
-	switch (globalState)
-	{
-	case IDLE:
-		globalState = IDLE;
-		break;
-	case COLLISION:
-		globalState = COLLISION;
-		break;
-	case BUSY:
-		if (pinVal)
-		{ //if input is 1, set state idle
+	if (*(STK_CTRL) & (1 << 16))
+	{ //check if there was a rollover since the last check.
+
+		*(STK_CTRL) &= ~(ENABLE | TICKINT);
+
+		switch (globalState)
+		{
+		case IDLE:
 			globalState = IDLE;
-		}
-		else
-		{ //else set state collision.
+			break;
+		case COLLISION:
 			globalState = COLLISION;
+			break;
+		case BUSY:
+			if (pinVal)
+			{ //if input is 1, set state idle
+				globalState = IDLE;
+			}
+			else
+			{ //else set state collision.
+				globalState = COLLISION;
+			}
+			break;
 		}
-		break;
 	}
-
-
 	setLED();
 	resetTimer();
-	}
 
-	*(GPIO_A + GPIO_BSRR) = (0x1<<24);
+	*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
 }
 
 void totalISR()
@@ -179,5 +181,9 @@ void resetTimer(void)
 	*(STK_VAL) = 18080;
 
 	//enable timer.
+	dummy  = (*(STK_CTRL) & 1 << 16)
+		
+	
+
 	*(STK_CTRL) |= ENABLE | TICKINT;
 }

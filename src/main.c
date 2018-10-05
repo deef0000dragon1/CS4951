@@ -119,6 +119,7 @@ void setLED(void)
 void initializeTimer()
 {
 	*(STK_LOAD) = 18080;						// number of cycles for 1.1ms.
+	*(STK_VAL) = 18080;
 	*(STK_CTRL) = CLKSOURCE | ENABLE | TICKINT; // System clock is clock s
 }
 

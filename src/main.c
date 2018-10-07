@@ -16,11 +16,12 @@ volatile static enum STATE globalState = IDLE;
 
 volatile static int pinVal = 0;
 volatile static int dummy = 0;
+
+//for transmitter
 volatile static int transmitChar = 0;
 volatile static int bitPosTracker = 0;
 volatile static int bitTracker = 0;
-
-
+volatile static int sideTracker = 0;
 
 void initializeTimer();
 void resetTimer();
@@ -122,7 +123,7 @@ void setLED(void)
 
 void initializeTimer()
 {
-	*(STK_LOAD) = 18080;						// number of cycles for 1.1ms.
+	*(STK_LOAD) = 18080; // number of cycles for 1.1ms.
 	*(STK_VAL) = 18080;
 	*(STK_CTRL) = CLKSOURCE | ENABLE | TICKINT; // System clock is clock s
 }
@@ -186,25 +187,72 @@ void resetTimer(void)
 	*(STK_VAL) = 18080;
 
 	//enable timer.
-	dummy  = (*(STK_CTRL) & 1 << 16)
-		
-	
+	dummy = (*(STK_CTRL)&1 << 16)
 
-	*(STK_CTRL) |= ENABLE | TICKINT;
+			* (STK_CTRL) |= ENABLE | TICKINT;
 }
 
 void setOutputPin(int val)
-
-
-void transmissionISR(){
-
-	if (globalState != COLLISION) {
-		if (bitTracker == 0) {
-			transmitChar = usart2_getch()
-			bitPosTracker = 8
-		}
-	}else{
-		setOutputPin(1)
-	}
+{
 }
 
+void transmissionISR()
+{
+	if (globalState != COLLISION)
+	{ //if not in a colission state, begin the output check code.
+		if (bitPosTracker == 0)
+		{ //if there is bit position left to get, get a new character and update the tracking information.
+			transmitChar = usart2_getch();
+			bitPosTracker = 8;
+			bitTracker = 0;
+			sideTracker = 0;
+		}
+
+		//if the transmission charcter is not zero, output.
+		if (transmitChar != 0)
+		{
+
+			if (sideTracker == 0)
+			{
+				//if the side is zero, (first side,)
+				bitTracker = (transmitChar >> (bitPosTracker - 1)) & 1;
+				//get the new bit
+				bitPosTracker--;
+				//drop the tracker by one
+				if (bitTracker == 1)
+				{//and output the first side of the data. 
+					setOutputPin(0)
+				}
+				else
+				{
+					setOutputPin(1)
+				}
+				sideTracker = 1
+			}
+			else
+			{
+				//if its not a zero, its the second side. 
+				if (bitTracker == 1)
+				{//just output the second side of the data. 
+					setOutputPin(1)
+				}
+				else
+				{
+					setOutputPin(0)
+				}
+
+				sideTracker = 0;
+			}
+		}
+		else
+		{
+			//if the transmission character is zero, drop the line, and make it so that it checks again next time.
+			bitPosTracker = 0;
+			setOutputPin(1);
+		}
+	}
+	else
+	{ // if in the colission state, drop all output and release the line.
+		setOutputPin(1);
+	}
+}

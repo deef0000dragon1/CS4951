@@ -199,10 +199,12 @@ void setOutputPin(int val)
 void transmissionISR(){
 
 	if (globalState != COLLISION) {
-		if (bitTracker = 0) {
-			usart2_getch()
+		if (bitTracker == 0) {
+			transmitChar = usart2_getch()
+			bitPosTracker = 8
 		}
 	}else{
 		setOutputPin(1)
 	}
 }
+

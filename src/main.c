@@ -145,7 +145,7 @@ void initTransmissionTimer(){
 		*(TIM_2 + TIM_DIER) |= (1 << 6);
 
 		//set maximum to 44K
-		*(TIM_2 + TIM_ARR) = (44000);
+		*(TIM_2 + TIM_ARR) = (20000);
 
 		//Set timer value
 		*(TIM_2 + TIM_CNT) = (0);
@@ -221,6 +221,11 @@ void resetTimer(void)
 
 void setOutputPin(int val)
 {
+	if(val){
+		*(GPIO_A + GPIO_BSRR) = 1<<3;
+	}else{
+		*(GPIO_A + GPIO_BSRR) = 1<<19;
+	}
 }
 
 void transmissionISR()

@@ -16,6 +16,10 @@ volatile static enum STATE globalState = IDLE;
 
 volatile static int pinVal = 0;
 volatile static int dummy = 0;
+volatile static int transmitChar = 0;
+volatile static int bitPosTracker = 0;
+volatile static int bitTracker = 0;
+
 
 
 void initializeTimer();
@@ -187,4 +191,18 @@ void resetTimer(void)
 	
 
 	*(STK_CTRL) |= ENABLE | TICKINT;
+}
+
+void setOutputPin(int val)
+
+
+void transmissionISR(){
+
+	if (globalState != COLLISION) {
+		if (bitTracker = 0) {
+			usart2_getch()
+		}
+	}else{
+		setOutputPin(1)
+	}
 }

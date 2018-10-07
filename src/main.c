@@ -58,6 +58,8 @@ int main()
 	*(EXTI_BASE + EXTI_PR) |= 0x1;
 	//enable EXTi0 IMPORTANT!!!
 	*(NVIC_ISER0) |= (1 << 6);
+	//enable tim2
+	*(NVIC_ISER0) |= (1 << 28);
 
 	//enable in software IMPORTANT!!!
 	asm("CPSIE i\n\t");
@@ -65,6 +67,8 @@ int main()
 	//initialize the timer for interrupt
 
 	initializeTimer();
+
+	initTransmissionTimer();
 
 	//logic for the state stuff and setting up the interrupts
 	globalState = IDLE;
@@ -126,6 +130,29 @@ void initializeTimer()
 	*(STK_LOAD) = 18080; // number of cycles for 1.1ms.
 	*(STK_VAL) = 18080;
 	*(STK_CTRL) = CLKSOURCE | ENABLE | TICKINT; // System clock is clock s
+}
+
+void initTransmissionTimer(){
+	//enables timer
+		*(RCC_APB1) |= 1;
+
+
+		//set one pulse mode and climbing mode
+		*(TIM_2) |= (1 << 3);
+		*(TIM_2) &= ~(1 << 4);
+
+		//Enable Interupt
+		*(TIM_2 + TIM_DIER) |= (1 << 6);
+
+		//set maximum to 44K
+		*(TIM_2 + TIM_ARR) = (44000);
+
+		//Set timer value
+		*(TIM_2 + TIM_CNT) = (0);
+
+		//turn on timer
+		//set the timer time
+		//set timer interupt (timerISR)
 }
 
 //timer has gone beyond the expected value.

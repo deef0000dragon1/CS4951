@@ -2,6 +2,7 @@
 #define GPIO_H
 
 #define TIM_2  (volatile uint32_t*) 0x40000000
+#define TIM_6  (volatile uint32_t*) 0x40001000
 
 #define TIM_DIER 0x3
 #define TIM_SR 0x4

@@ -43,23 +43,28 @@ int main()
 
 	pinInit();
 
-	//enable tim2
-	*(NVIC_ISER0) |= (1 << 28);
-
-	//enable in software IMPORTANT!!!
-	asm("CPSIE i\n\t");
-
 	//initialize the timer for interrupt
 
 	initializeTimer();
 
 	initTransmissionTimer();
 
+	init_usart2(19200,16000000);
+
+	//enable tim6 in nvic
+	*(NVIC_ISER1) |= (1 << 29);
+
+	//enable in software IMPORTANT!!!
+	asm("CPSIE i\n\t");
+
 	//logic for the state stuff and setting up the interrupts
 	globalState = IDLE;
 	setLED();
 	resetTimer();
 	//*(EXTI_BASE + EXTI_SWIER) |= 1;
+
+	//test the interrupt
+	*(TIM_6 + 5) |= 1;
 	while (1)
 		;
 }
@@ -147,20 +152,22 @@ void initializeTimer()
 void initTransmissionTimer()
 {
 	//enables timer
-	*(RCC_APB1) |= 1;
+	*(RCC_APB1) |= (1<<4);
 
 	//set one pulse mode and climbing mode
-	*(TIM_2) |= (1 << 3);
-	*(TIM_2) &= ~(1 << 4);
+	*(TIM_6) |= (1 << 3);
 
 	//Enable Interrupt
-	*(TIM_2 + TIM_DIER) |= (1 << 6);
+	*(TIM_6 + TIM_DIER) |= (1 << 0);
 
-	//set maximum to 20k
-	*(TIM_2 + TIM_ARR) = (20000);
+	//set maximum to 8k
+	*(TIM_6 + TIM_ARR) = (8000);
 
 	//Set timer value
-	*(TIM_2 + TIM_CNT) = (0);
+	*(TIM_6 + TIM_CNT) = (0);
+
+	//enable the timer
+	*(TIM_6) |= 1;
 
 	//turn on timer
 	//set the timer time

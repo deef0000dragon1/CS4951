@@ -6,7 +6,8 @@
 #define TIM_DIER 0x3
 #define TIM_SR 0x4
 #define TIM_CNT 0x9
-#define TIM_ARR 0x11
+#define TIM_PSC 0xA
+#define TIM_ARR 0xB
 
 #define GPIO_A (volatile uint32_t*) 0x40020000
 #define GPIO_B (volatile uint32_t*) 0x40020400

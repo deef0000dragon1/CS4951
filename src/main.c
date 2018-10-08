@@ -25,7 +25,7 @@ volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
 
 
-volatile static bool transmissionISRTestingMode = true; 
+volatile static int transmissionISRTestingMode = 1;
 
 void initializeTimer();
 void resetTimer();
@@ -34,6 +34,7 @@ void pinISR();
 void totalISR();
 void timerISR();
 void setLED();
+void initTransmissionTimer();
 void transmissionISR();
 
 int main()
@@ -239,7 +240,7 @@ void setOutputPin(int val)
 
 void transmissionISR()
 {
-	if (globalState != COLLISION)
+	if (globalState == IDLE)
 	{ //if not in a colission state, begin the output check code.
 		if (bitPosTracker == 0)
 		{ //if there is bit position left to get, get a new character and update the tracking information.

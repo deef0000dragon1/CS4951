@@ -23,6 +23,9 @@ volatile static int bitPosTracker = 0;
 volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
 
+
+volatile static bool transmissionISRTestingMode = true; 
+
 void initializeTimer();
 void resetTimer();
 void pinISR();
@@ -234,7 +237,11 @@ void transmissionISR()
 	{ //if not in a colission state, begin the output check code.
 		if (bitPosTracker == 0)
 		{ //if there is bit position left to get, get a new character and update the tracking information.
-			transmitChar = usart2_getch();
+			if (transmissionISRTestingMode){
+				transmitChar = 'M';
+			}else{
+				transmitChar = usart2_getch();
+			}
 			bitPosTracker = 8;
 			bitTracker = 0;
 			sideTracker = 0;

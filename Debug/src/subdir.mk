@@ -4,25 +4,34 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../src/RingBuffer.c \
 ../src/adc.c \
 ../src/delay.c \
 ../src/lcd.c \
 ../src/lcd_driver.c \
-../src/main.c 
+../src/main.c \
+../src/syscalls.c \
+../src/uart_driver.c 
 
 OBJS += \
+./src/RingBuffer.o \
 ./src/adc.o \
 ./src/delay.o \
 ./src/lcd.o \
 ./src/lcd_driver.o \
-./src/main.o 
+./src/main.o \
+./src/syscalls.o \
+./src/uart_driver.o 
 
 C_DEPS += \
+./src/RingBuffer.d \
 ./src/adc.d \
 ./src/delay.d \
 ./src/lcd.d \
 ./src/lcd_driver.d \
-./src/main.d 
+./src/main.d \
+./src/syscalls.d \
+./src/uart_driver.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

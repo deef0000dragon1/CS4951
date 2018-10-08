@@ -157,7 +157,7 @@ g_pfnVectors:
   .word	TIM1_UP_TIM10_IRQHandler     			/* TIM1 Update interrupt and TIM10 global interrupt                   */
   .word	TIM1_TRG_COM_TIM11_IRQHandler			/* TIM1 Trigger and Commutation interrupts and TIM11 global interrupt */
   .word	TIM1_CC_IRQHandler           			/* TIM1 Capture Compare interrupt                                     */
-  .word	TIM2_IRQHandler		              		/* TIM2 global interrupt                                              */
+  .word	transmissionISR		              		/* TIM2 global interrupt                                              */
   .word	TIM3_IRQHandler              			/* TIM3 global interrupt                                              */
   .word	TIM4_IRQHandler              			/* TIM4 global interrupt                                              */
   .word	I2C1_EV_IRQHandler           			/* I2C1 event interrupt                                               */

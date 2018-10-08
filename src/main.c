@@ -1,5 +1,6 @@
 #include "gpio.h"
 #include "delay.h"
+#include "uart_driver.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,39 +26,19 @@ volatile static int sideTracker = 0;
 
 void initializeTimer();
 void resetTimer();
+void pinInit();
 void pinISR();
 void totalISR();
 void timerISR();
 void setLED();
+void transmissionISR();
 
 int main()
 {
 	//initialization of the gpio pins and the timer here first
 
-	//initialize GPIO pins from SoC
-	*(RCC_AHB1) |= 0xF; //enable a-d
+	pinInit();
 
-	*(GPIO_A + GPIO_MODER) &= ~(0xFFF << 6);
-	*(GPIO_A + GPIO_MODER) |= (0x555 << 6);
-
-	//initialize some test pin for received data
-	*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
-	*(GPIO_A + GPIO_MODER) |= (0x0 << 0);
-	//set up the interrupt for it
-	*(RCC_APB2) |= 1 << 14;
-
-	//syscfg allows interrupts in hardware
-	*(SYSCFG_CR1) &= ~(0x7 << 0);
-	*(SYSCFG_CR1) |= (0x0 << 0);
-	//imr allows the interrupt in exti
-	*(EXTI_BASE + EXTI_IMR) |= 0x1;
-	//rising edge and falling edge enable
-	*(EXTI_BASE + EXTI_RTSR) |= 0x1;
-	*(EXTI_BASE + EXTI_FTSR) |= 0x1;
-	//clear the pending flag if any
-	*(EXTI_BASE + EXTI_PR) |= 0x1;
-	//enable EXTi0 IMPORTANT!!!
-	*(NVIC_ISER0) |= (1 << 6);
 	//enable tim2
 	*(NVIC_ISER0) |= (1 << 28);
 
@@ -75,9 +56,34 @@ int main()
 	setLED();
 	resetTimer();
 	//*(EXTI_BASE + EXTI_SWIER) |= 1;
-	while (1)
-	{
-	}
+	while (1);
+}
+
+void pinInit(void){
+	//initialize GPIO pins from SoC
+	*(RCC_AHB1) |= 0xF; //enable a-d
+
+	//Setting A pins as output
+	*(GPIO_A + GPIO_MODER) &= ~(0xFFF << 6);
+	*(GPIO_A + GPIO_MODER) |= (0x555 << 6);
+
+	//initialize A0 for received data
+	*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
+	*(GPIO_A + GPIO_MODER) |= (0x0 << 0);
+	//set up the interrupt for it
+	*(RCC_APB2) |= 1 << 14;
+	//syscfg allows interrupts in hardware
+	*(SYSCFG_CR1) &= ~(0x7 << 0);
+	*(SYSCFG_CR1) |= (0x0 << 0);
+	//imr allows the interrupt in exti
+	*(EXTI_BASE + EXTI_IMR) |= 0x1;
+	//rising edge and falling edge enable
+	*(EXTI_BASE + EXTI_RTSR) |= 0x1;
+	*(EXTI_BASE + EXTI_FTSR) |= 0x1;
+	//clear the pending flag if any
+	*(EXTI_BASE + EXTI_PR) |= 0x1;
+	//enable EXTi0 IMPORTANT!!!
+	*(NVIC_ISER0) |= (1 << 6);
 }
 
 void pinISR()
@@ -141,10 +147,10 @@ void initTransmissionTimer(){
 		*(TIM_2) |= (1 << 3);
 		*(TIM_2) &= ~(1 << 4);
 
-		//Enable Interupt
+		//Enable Interrupt
 		*(TIM_2 + TIM_DIER) |= (1 << 6);
 
-		//set maximum to 44K
+		//set maximum to 20k
 		*(TIM_2 + TIM_ARR) = (20000);
 
 		//Set timer value
@@ -152,7 +158,7 @@ void initTransmissionTimer(){
 
 		//turn on timer
 		//set the timer time
-		//set timer interupt (timerISR)
+		//set timer interrupt (timerISR)
 }
 
 //timer has gone beyond the expected value.
@@ -214,9 +220,9 @@ void resetTimer(void)
 	*(STK_VAL) = 18080;
 
 	//enable timer.
-	dummy = (*(STK_CTRL)&1 << 16)
+	dummy = (*(STK_CTRL)&1 << 16);
 
-			* (STK_CTRL) |= ENABLE | TICKINT;
+	*(STK_CTRL) |= ENABLE | TICKINT;
 }
 
 void setOutputPin(int val)
@@ -253,24 +259,24 @@ void transmissionISR()
 				//drop the tracker by one
 				if (bitTracker == 1)
 				{//and output the first side of the data. 
-					setOutputPin(0)
+					setOutputPin(0);
 				}
 				else
 				{
-					setOutputPin(1)
+					setOutputPin(1);
 				}
-				sideTracker = 1
+				sideTracker = 1;
 			}
 			else
 			{
 				//if its not a zero, its the second side. 
 				if (bitTracker == 1)
 				{//just output the second side of the data. 
-					setOutputPin(1)
+					setOutputPin(1);
 				}
 				else
 				{
-					setOutputPin(0)
+					setOutputPin(0);
 				}
 
 				sideTracker = 0;

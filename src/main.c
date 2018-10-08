@@ -24,7 +24,6 @@ volatile static int bitPosTracker = 0;
 volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
 
-
 volatile static int transmissionISRTestingMode = 1;
 
 void initializeTimer();
@@ -60,10 +59,12 @@ int main()
 	setLED();
 	resetTimer();
 	//*(EXTI_BASE + EXTI_SWIER) |= 1;
-	while (1);
+	while (1)
+		;
 }
 
-void pinInit(void){
+void pinInit(void)
+{
 	//initialize GPIO pins from SoC
 	*(RCC_AHB1) |= 0xF; //enable a-d
 
@@ -142,33 +143,32 @@ void initializeTimer()
 	*(STK_CTRL) = CLKSOURCE | ENABLE | TICKINT; // System clock is clock s
 }
 
-void initTransmissionTimer(){
+void initTransmissionTimer()
+{
 	//enables timer
-		*(RCC_APB1) |= 1;
+	*(RCC_APB1) |= 1;
 
+	//set one pulse mode and climbing mode
+	*(TIM_2) |= (1 << 3);
+	*(TIM_2) &= ~(1 << 4);
 
-		//set one pulse mode and climbing mode
-		*(TIM_2) |= (1 << 3);
-		*(TIM_2) &= ~(1 << 4);
+	//Enable Interrupt
+	*(TIM_2 + TIM_DIER) |= (1 << 6);
 
-		//Enable Interrupt
-		*(TIM_2 + TIM_DIER) |= (1 << 6);
+	//set maximum to 20k
+	*(TIM_2 + TIM_ARR) = (20000);
 
-		//set maximum to 20k
-		*(TIM_2 + TIM_ARR) = (20000);
+	//Set timer value
+	*(TIM_2 + TIM_CNT) = (0);
 
-		//Set timer value
-		*(TIM_2 + TIM_CNT) = (0);
-
-		//turn on timer
-		//set the timer time
-		//set timer interrupt (timerISR)
+	//turn on timer
+	//set the timer time
+	//set timer interrupt (timerISR)
 }
 
 //timer has gone beyond the expected value.
 void timerISR()
 {
-	*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
 
 	//disable timer
 	if (*(STK_CTRL) & (1 << 16))
@@ -198,8 +198,6 @@ void timerISR()
 	}
 	setLED();
 	resetTimer();
-
-	*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
 }
 
 void totalISR()
@@ -231,10 +229,13 @@ void resetTimer(void)
 
 void setOutputPin(int val)
 {
-	if(val){
-		*(GPIO_A + GPIO_BSRR) = 1<<3;
-	}else{
-		*(GPIO_A + GPIO_BSRR) = 1<<19;
+	if (val)
+	{
+		*(GPIO_A + GPIO_BSRR) = 1 << 3;
+	}
+	else
+	{
+		*(GPIO_A + GPIO_BSRR) = 1 << 19;
 	}
 }
 
@@ -244,14 +245,24 @@ void transmissionISR()
 	{ //if not in a colission state, begin the output check code.
 		if (bitPosTracker == 0)
 		{ //if there is bit position left to get, get a new character and update the tracking information.
-			if (transmissionISRTestingMode){
+
+			//sync pulse high
+			*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
+
+			if (transmissionISRTestingMode)
+			{
 				transmitChar = 'M';
-			}else{
+			}
+			else
+			{
 				transmitChar = usart2_getch();
 			}
 			bitPosTracker = 8;
 			bitTracker = 0;
 			sideTracker = 0;
+
+			//sync pulse low. 
+			*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
 		}
 
 		//if the transmission charcter is not zero, output.
@@ -266,7 +277,7 @@ void transmissionISR()
 				bitPosTracker--;
 				//drop the tracker by one
 				if (bitTracker == 1)
-				{//and output the first side of the data. 
+				{ //and output the first side of the data.
 					setOutputPin(0);
 				}
 				else
@@ -277,9 +288,9 @@ void transmissionISR()
 			}
 			else
 			{
-				//if its not a zero, its the second side. 
+				//if its not a zero, its the second side.
 				if (bitTracker == 1)
-				{//just output the second side of the data. 
+				{ //just output the second side of the data.
 					setOutputPin(1);
 				}
 				else

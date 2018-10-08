@@ -23,6 +23,7 @@ volatile static int transmitChar = 0;
 volatile static int bitPosTracker = 0;
 volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
+volatile static int continueTransmission = 0;
 
 volatile static int transmissionISRTestingMode = 1;
 
@@ -241,64 +242,75 @@ void setOutputPin(int val)
 
 void transmissionISR()
 {
-	if (globalState == IDLE)
+	if (globalState != COLLISION)
 	{ //if not in a colission state, begin the output check code.
-		if (bitPosTracker == 0)
-		{ //if there is bit position left to get, get a new character and update the tracking information.
 
-			//sync pulse high
-			*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
-
-			if (transmissionISRTestingMode)
-			{
-				transmitChar = 'M';
-			}
-			else
-			{
-				transmitChar = usart2_getch();
-			}
-			bitPosTracker = 8;
-			bitTracker = 0;
-			sideTracker = 0;
-
-			//sync pulse low. 
-			*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
-		}
-
-		//if the transmission charcter is not zero, output.
-		if (transmitChar != 0)
+		//check if new transmission (idle) or if continuing transmission
+		if (globalState == IDLE || continueTransmission == 1)
 		{
 
-			if (sideTracker == 0)
-			{
-				//if the side is zero, (first side,)
-				bitTracker = (transmitChar >> (bitPosTracker - 1)) & 1;
-				//get the new bit
-				bitPosTracker--;
-				//drop the tracker by one
-				if (bitTracker == 1)
-				{ //and output the first side of the data.
-					setOutputPin(0);
-				}
-				else
-				{
-					setOutputPin(1);
-				}
-				sideTracker = 1;
+			//if new transmission, set continue bit so that, can transmit when line is busy from self.
+			if (globalState == IDLE){
+				continueTransmission = 1;
 			}
-			else
-			{
-				//if its not a zero, its the second side.
-				if (bitTracker == 1)
-				{ //just output the second side of the data.
-					setOutputPin(1);
+
+			if (bitPosTracker == 0)
+			{ //if there is bit position left to get, get a new character and update the tracking information.
+
+				//sync pulse high
+				*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
+
+				if (transmissionISRTestingMode)
+				{
+					transmitChar = 'M';
 				}
 				else
 				{
-					setOutputPin(0);
+					transmitChar = usart2_getch();
 				}
-
+				bitPosTracker = 8;
+				bitTracker = 0;
 				sideTracker = 0;
+
+				//sync pulse low.
+				*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
+			}
+
+			//if the transmission charcter is not zero, output.
+			if (transmitChar != 0)
+			{
+
+				if (sideTracker == 0)
+				{
+					//if the side is zero, (first side,)
+					bitTracker = (transmitChar >> (bitPosTracker - 1)) & 1;
+					//get the new bit
+					bitPosTracker--;
+					//drop the tracker by one
+					if (bitTracker == 1)
+					{ //and output the first side of the data.
+						setOutputPin(0);
+					}
+					else
+					{
+						setOutputPin(1);
+					}
+					sideTracker = 1;
+				}
+				else
+				{
+					//if its not a zero, its the second side.
+					if (bitTracker == 1)
+					{ //just output the second side of the data.
+						setOutputPin(1);
+					}
+					else
+					{
+						setOutputPin(0);
+					}
+
+					sideTracker = 0;
+				}
 			}
 		}
 		else
@@ -310,6 +322,7 @@ void transmissionISR()
 	}
 	else
 	{ // if in the colission state, drop all output and release the line.
+		continueTransmission = 0;
 		setOutputPin(1);
 	}
 }

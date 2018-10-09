@@ -99,7 +99,6 @@ void pinInit(void)
 
 void pinISR()
 {
-	*(GPIO_A + GPIO_BSRR) = (0x1 << 4);
 
 	//edge of manchester coding
 
@@ -269,6 +268,7 @@ void transmissionISR()
 			{ //if there is bit position left to get, get a new character and update the tracking information.
 
 				//sync pulse high
+				*(GPIO_A + GPIO_BSRR) = (0x1 << 4);
 				//*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
 
 				if (transmissionISRTestingMode)
@@ -284,6 +284,7 @@ void transmissionISR()
 				sideTracker = 0;
 
 				//sync pulse low.
+				*(GPIO_A + GPIO_BSRR) = (0x1 << 20);
 				//*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
 			}
 
@@ -322,6 +323,9 @@ void transmissionISR()
 
 					sideTracker = 0;
 				}
+			}else{
+				setOutputPin(1);
+				bitPosTracker = 0;
 			}
 		}
 		else

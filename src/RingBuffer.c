@@ -13,7 +13,7 @@ void ringbufferPut(RingBuffer * buffer, char element){
 
 char ringbufferGet(RingBuffer * buffer){
 
-	while (!ringbufferHasElement(buffer)){}
+	if(!ringbufferHasElement(buffer)){return 0;}
 
 	char c = buffer->buffer[buffer->get];
 

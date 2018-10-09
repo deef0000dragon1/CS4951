@@ -25,7 +25,7 @@ volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
 volatile static int continueTransmission = 0;
 
-volatile static int transmissionISRTestingMode = 1;
+volatile static int transmissionISRTestingMode = 0;
 
 void initializeTimer();
 void resetTimer();
@@ -52,7 +52,7 @@ int main()
 	init_usart2(19200,16000000);
 
 	//enable tim6 in nvic
-	*(NVIC_ISER1) |= (1 << 29);
+	*(NVIC_ISER1) |= (1 << 22);
 
 	//enable in software IMPORTANT!!!
 	asm("CPSIE i\n\t");
@@ -64,7 +64,7 @@ int main()
 	//*(EXTI_BASE + EXTI_SWIER) |= 1;
 
 	//test the interrupt
-	*(TIM_6 + 5) |= 1;
+	//*(TIM_6 + 5) |= 1;
 	while (1)
 		;
 }
@@ -75,8 +75,8 @@ void pinInit(void)
 	*(RCC_AHB1) |= 0xF; //enable a-d
 
 	//Setting A pins as output
-	*(GPIO_A + GPIO_MODER) &= ~(0xFFF << 6);
-	*(GPIO_A + GPIO_MODER) |= (0x555 << 6);
+	*(GPIO_A + GPIO_MODER) &= ~(0xFFFF << 2);
+	*(GPIO_A + GPIO_MODER) |= (0x5555 << 2);
 
 	//initialize A0 for received data
 	*(GPIO_A + GPIO_MODER) &= ~(0x3 << 0);
@@ -160,8 +160,11 @@ void initTransmissionTimer()
 	//Enable Interrupt
 	*(TIM_6 + TIM_DIER) |= (1 << 0);
 
+	//clear the flag
+	*(TIM_6 + TIM_SR) &= ~(1<<0);
+
 	//set maximum to 8k
-	*(TIM_6 + TIM_ARR) = (8000);
+	*(TIM_6 + TIM_ARR) = (7816);
 
 	//Set timer value
 	*(TIM_6 + TIM_CNT) = (0);
@@ -239,11 +242,11 @@ void setOutputPin(int val)
 {
 	if (val)
 	{
-		*(GPIO_A + GPIO_BSRR) = 1 << 3;
+		*(GPIO_A + GPIO_BSRR) = (1 << 8);
 	}
 	else
 	{
-		*(GPIO_A + GPIO_BSRR) = 1 << 19;
+		*(GPIO_A + GPIO_BSRR) = (1 << 24);
 	}
 }
 
@@ -265,7 +268,7 @@ void transmissionISR()
 			{ //if there is bit position left to get, get a new character and update the tracking information.
 
 				//sync pulse high
-				*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
+				//*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
 
 				if (transmissionISRTestingMode)
 				{
@@ -280,7 +283,7 @@ void transmissionISR()
 				sideTracker = 0;
 
 				//sync pulse low.
-				*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
+				//*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
 			}
 
 			//if the transmission charcter is not zero, output.
@@ -332,4 +335,8 @@ void transmissionISR()
 		continueTransmission = 0;
 		setOutputPin(1);
 	}
+
+	//*(TIM_6 + 5) &= ~(1<<0);
+	*(TIM_6 + TIM_SR) &= ~(1<<0);
+	*(TIM_6) |= 1;
 }

@@ -49,7 +49,7 @@ int main()
 
 	initTransmissionTimer();
 
-	init_usart2(19200,16000000);
+	init_usart2(19200, 16000000);
 
 	//enable tim6 in nvic
 	*(NVIC_ISER1) |= (1 << 22);
@@ -152,7 +152,7 @@ void initializeTimer()
 void initTransmissionTimer()
 {
 	//enables timer
-	*(RCC_APB1) |= (1<<4);
+	*(RCC_APB1) |= (1 << 4);
 
 	//set one pulse mode and climbing mode
 	*(TIM_6) |= (1 << 3);
@@ -161,7 +161,7 @@ void initTransmissionTimer()
 	*(TIM_6 + TIM_DIER) |= (1 << 0);
 
 	//clear the flag
-	*(TIM_6 + TIM_SR) &= ~(1<<0);
+	*(TIM_6 + TIM_SR) &= ~(1 << 0);
 
 	//set maximum to 8k
 	*(TIM_6 + TIM_ARR) = (7816);
@@ -260,7 +260,8 @@ void transmissionISR()
 		{
 
 			//if new transmission, set continue bit so that, can transmit when line is busy from self.
-			if (globalState == IDLE){
+			if (globalState == IDLE)
+			{
 				continueTransmission = 1;
 			}
 
@@ -295,7 +296,6 @@ void transmissionISR()
 					//if the side is zero, (first side,)
 					bitTracker = (transmitChar >> (bitPosTracker - 1)) & 1;
 					//get the new bit
-					bitPosTracker--;
 					//drop the tracker by one
 					if (bitTracker == 1)
 					{ //and output the first side of the data.
@@ -318,6 +318,7 @@ void transmissionISR()
 					{
 						setOutputPin(0);
 					}
+					bitPosTracker--;
 
 					sideTracker = 0;
 				}
@@ -337,6 +338,6 @@ void transmissionISR()
 	}
 
 	//*(TIM_6 + 5) &= ~(1<<0);
-	*(TIM_6 + TIM_SR) &= ~(1<<0);
+	*(TIM_6 + TIM_SR) &= ~(1 << 0);
 	*(TIM_6) |= 1;
 }

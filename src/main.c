@@ -25,6 +25,8 @@ volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
 volatile static int continueTransmission = 0;
 
+volatile static char frame[32];
+
 volatile static int transmissionISRTestingMode = 0;
 
 void initializeTimer();
@@ -341,7 +343,7 @@ void transmissionISR()
 		}
 	}
 	else
-	{ // if in the colission state, drop all output and release the line.
+	{ // if in the collision state, drop all output and release the line.
 		continueTransmission = 0;
 		setOutputPin(1);
 	}
@@ -365,13 +367,13 @@ void messageReceiver(int clocktime)
 	{
 		//it is a short bit, perform the short bit actions. 
 		if (middleTracker == 1) {
-			middleTRacker = 0;
+			middleTracker = 0;
 			//if the middle tracker is true, than the last bit was also short
 			//and as such, this is the middle of a bit. 
 
 		}else{
 			//this is not infact a middle bit, and as such, the only thing that we need to do is say that there is one for next time.
-			middleTRacker = 1;
+			middleTracker = 1;
 		}
 	}
 	else
@@ -382,11 +384,19 @@ void messageReceiver(int clocktime)
 			//it is a long bit. perform the long bit actions
 		}else{
 			//it was outside either bit width, soemthing is wrong, invalidate by calling finish frame
-			finishFrame()
+			finishFrame();
 		}
 	}
 }
 
 void finishFrame()
 {
+	if(globalState == IDLE){
+		//finish the frame and output to USART
+		for(int i = 0; i < sizeof(frame); i++){
+			usart2_putch(frame[i]);
+		}
+	}else{
+
+	}
 }

@@ -105,7 +105,7 @@ void pinISR()
 	//temp disable timer
 	*(STK_CTRL) &= ~(ENABLE | TICKINT);
 	//GEt value from the timer
-	int clockValue = 0;
+	int clockValue = *(STK_VAL);
 	//set the state to busy - we are getting information
 	globalState = BUSY;
 	

@@ -349,6 +349,15 @@ void transmissionISR()
 	*(TIM_6) |= 1;
 }
 
+int RecieveTracker 
 void messageReceiver(int clocktime){
+	int short1 = 0;
+	int short2 = 0;
+	int long1 = 0;
+	int long2 = 0;
+
+}
+
+void finishFrame(STATE enteredState){
 
 }

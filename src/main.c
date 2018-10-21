@@ -356,8 +356,11 @@ void messageReceiver(int clocktime){
 	int long1 = 0;
 	int long2 = 0;
 
+	//assuming 1 is smaller than 2.
+
+
 }
 
-void finishFrame(STATE enteredState){
+void finishFrame(){
 
 }

@@ -370,7 +370,7 @@ void messageReceiver(int clocktime)
 			middleTracker = 0;
 			//if the middle tracker is true, than the last bit was also short
 			//and as such, this is the middle of a bit. 
-
+			dealWithBit();
 		}else{
 			//this is not infact a middle bit, and as such, the only thing that we need to do is say that there is one for next time.
 			middleTracker = 1;
@@ -382,12 +382,20 @@ void messageReceiver(int clocktime)
 		{
 			//if it is the long case, it is ALWAYS the middle
 			//it is a long bit. perform the long bit actions
+			dealWithBit();
 		}else{
 			//it was outside either bit width, soemthing is wrong, invalidate by calling finish frame
 			finishFrame();
 		}
 	}
 }
+
+
+
+void dealWithBit(){
+
+}
+
 
 void finishFrame()
 {

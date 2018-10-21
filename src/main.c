@@ -104,15 +104,18 @@ void pinISR()
 
 	//temp disable timer
 	*(STK_CTRL) &= ~(ENABLE | TICKINT);
-
+	//GEt value from the timer
+	int clockValue = 0;
 	//set the state to busy - we are getting information
 	globalState = BUSY;
-
+	
 	//update LEDs
 	setLED();
 
 	resetTimer();
 
+	messageReceiver(clockValue);
+	//Bit Value Tracking Func(timer value)
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1 << 0);
 
@@ -344,4 +347,8 @@ void transmissionISR()
 	//*(TIM_6 + 5) &= ~(1<<0);
 	*(TIM_6 + TIM_SR) &= ~(1 << 0);
 	*(TIM_6) |= 1;
+}
+
+void messageReceiver(int clocktime){
+
 }

@@ -108,7 +108,7 @@ void pinISR()
 	int clockValue = *(STK_VAL);
 	//set the state to busy - we are getting information
 	globalState = BUSY;
-	
+
 	//update LEDs
 	setLED();
 
@@ -326,7 +326,9 @@ void transmissionISR()
 
 					sideTracker = 0;
 				}
-			}else{
+			}
+			else
+			{
 				setOutputPin(1);
 				bitPosTracker = 0;
 			}
@@ -349,8 +351,8 @@ void transmissionISR()
 	*(TIM_6) |= 1;
 }
 
-int RecieveTracker 
-void messageReceiver(int clocktime){
+int RecieveTracker void messageReceiver(int clocktime)
+{
 	int short1 = 0;
 	int short2 = 0;
 	int long1 = 0;
@@ -358,9 +360,22 @@ void messageReceiver(int clocktime){
 
 	//assuming 1 is smaller than 2.
 
-
+	if (clocktime >= short1 && clocktime <= short2)
+	{
+		//it is a short bit, perform the short bit actions. 
+	}
+	else
+	{
+		if (clocktime >= long1 && clocktime <= long2)
+		{
+			//it is a long bit. perform the long bit actions
+		}else{
+			//it was outside either bit width, soemthing is wrong, invalidate by calling finish frame
+			finishFrame()
+		}
+	}
 }
 
-void finishFrame(){
-
+void finishFrame()
+{
 }

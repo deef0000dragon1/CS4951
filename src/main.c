@@ -353,10 +353,10 @@ void transmissionISR()
 
 int RecieveTracker void messageReceiver(int clocktime)
 {
-	int short1 = 0;
-	int short2 = 0;
-	int long1 = 0;
-	int long2 = 0;
+	int short1 = 7894;
+	int short2 = 8105;
+	int long1 = 15788;
+	int long2 = 16211;
 
 	//assuming 1 is smaller than 2.
 

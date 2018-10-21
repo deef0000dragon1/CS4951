@@ -351,23 +351,34 @@ void transmissionISR()
 	*(TIM_6) |= 1;
 }
 
-int RecieveTracker void messageReceiver(int clocktime)
+
+void messageReceiver(int clocktime)
 {
 	int short1 = 7894;
 	int short2 = 8105;
 	int long1 = 15788;
 	int long2 = 16211;
-
+	static int middleTracker;
 	//assuming 1 is smaller than 2.
 
-	if (clocktime >= short1 && clocktime <= short2)
+	if ((clocktime >= short1 && clocktime <= short2))
 	{
 		//it is a short bit, perform the short bit actions. 
+		if (middleTracker == 1) {
+			middleTRacker = 0;
+			//if the middle tracker is true, than the last bit was also short
+			//and as such, this is the middle of a bit. 
+
+		}else{
+			//this is not infact a middle bit, and as such, the only thing that we need to do is say that there is one for next time.
+			middleTRacker = 1;
+		}
 	}
 	else
 	{
-		if (clocktime >= long1 && clocktime <= long2)
+		if ((clocktime >= long1 && clocktime <= long2) || clocktime == 0)
 		{
+			//if it is the long case, it is ALWAYS the middle
 			//it is a long bit. perform the long bit actions
 		}else{
 			//it was outside either bit width, soemthing is wrong, invalidate by calling finish frame

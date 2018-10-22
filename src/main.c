@@ -24,6 +24,7 @@ volatile static int bitPosTracker = 0;
 volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
 volatile static int continueTransmission = 0;
+volatile static int frameChars = 0;
 
 volatile static char frame[32];
 
@@ -38,6 +39,9 @@ void timerISR();
 void setLED();
 void initTransmissionTimer();
 void transmissionISR();
+void finishFrame();
+void messageReceiver(int clocktime);
+void frameAdd(int bit);
 
 int main()
 {
@@ -354,57 +358,63 @@ void transmissionISR()
 }
 
 
-void messageReceiver(int clocktime)
-{
+void messageReceiver(int clocktime){
 	int short1 = 7894;
 	int short2 = 8105;
 	int long1 = 15788;
 	int long2 = 16211;
 	static int middleTracker;
 	//assuming 1 is smaller than 2.
+	int adjClockTime = 18080 - clocktime;
 
-	if ((clocktime >= short1 && clocktime <= short2))
-	{
+	if ((adjClockTime >= short1 && adjClockTime <= short2)){
 		//it is a short bit, perform the short bit actions. 
 		if (middleTracker == 1) {
-			middleTracker = 0;
 			//if the middle tracker is true, than the last bit was also short
-			//and as such, this is the middle of a bit. 
-			dealWithBit();
-		}else{
-			//this is not infact a middle bit, and as such, the only thing that we need to do is say that there is one for next time.
-			middleTracker = 1;
+			//so this finishes a bit
+			frameAdd(pinVal);
 		}
-	}
-	else
-	{
-		if ((clocktime >= long1 && clocktime <= long2) || clocktime == 0)
-		{
-			//if it is the long case, it is ALWAYS the middle
-			//it is a long bit. perform the long bit actions
-			dealWithBit();
-		}else{
-			//it was outside either bit width, soemthing is wrong, invalidate by calling finish frame
-			finishFrame();
-		}
+
+		middleTracker ^= 1; //flip it always, for short bits
+	}else if ((adjClockTime >= long1 && adjClockTime <= long2) || clocktime == 0){
+		//if it is the long case, it is ALWAYS the middle
+		middleTracker = 1;
+		//we also just finished a bit, so we add it onto the array
+		frameAdd(pinVal);
+	}else{
+		finishFrame(); //this was invalid
 	}
 }
-
-
-
-void dealWithBit(){
-
-}
-
 
 void finishFrame()
 {
 	if(globalState == IDLE){
 		//finish the frame and output to USART
-		for(int i = 0; i < sizeof(frame); i++){
+		for(int i = 0; i < frameChars && i < sizeof(frame); i++){
 			usart2_putch(frame[i]);
+			frame[i] = 0;
 		}
+		//clearing a potential unfinished byte, as well
+		frame[frameChars] = 0;
+		frameChars = 0;
 	}else{
+		for(int i = 0; i < sizeof(frame); i++){
+			frame[i] = 0;
+		}
+	}
+}
 
+void frameAdd(int bit){
+	//it's simple to add a bit to the current frame array
+	static int byteTracker = 0;
+	//0 is msb, 7 is lsb
+
+	//set the particular bit in the particular byte to make it work
+	//this assumes it should be cleared aead of time, which should be fine
+	frame[frameChars] |= ((bit&1)<<(8-byteTracker));
+
+	byteTracker = (byteTracker + 1)%8;
+	if(byteTracker == 0){
+		frameChars = (frameChars + 1)%32;
 	}
 }

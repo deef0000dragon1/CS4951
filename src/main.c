@@ -26,6 +26,8 @@ volatile static int sideTracker = 0;
 volatile static int continueTransmission = 0;
 volatile static int frameChars = 0;
 
+static int byteTracker = 0;
+
 volatile static char frame[32];
 
 volatile static int transmissionISRTestingMode = 0;
@@ -40,7 +42,7 @@ void setLED();
 void initTransmissionTimer();
 void transmissionISR();
 void finishFrame();
-void messageReceiver(int clocktime);
+void messageReceiver(int clocktime, int bit);
 void frameAdd(int bit);
 
 int main()
@@ -112,6 +114,8 @@ void pinISR()
 	*(STK_CTRL) &= ~(ENABLE | TICKINT);
 	//GEt value from the timer
 	int clockValue = *(STK_VAL);
+
+	messageReceiver(clockValue,pinVal);
 	//set the state to busy - we are getting information
 	globalState = BUSY;
 
@@ -119,8 +123,6 @@ void pinISR()
 	setLED();
 
 	resetTimer();
-
-	messageReceiver(clockValue);
 	//Bit Value Tracking Func(timer value)
 	//clear interrupt flag
 	*(EXTI_BASE + EXTI_PR) |= (1 << 0);
@@ -199,9 +201,11 @@ void timerISR()
 		{
 		case IDLE:
 			globalState = IDLE;
+			finishFrame();
 			break;
 		case COLLISION:
 			globalState = COLLISION;
+			resetTimer();
 			break;
 		case BUSY:
 			if (pinVal)
@@ -212,11 +216,11 @@ void timerISR()
 			{ //else set state collision.
 				globalState = COLLISION;
 			}
+			resetTimer();
 			break;
 		}
 	}
 	setLED();
-	resetTimer();
 }
 
 void totalISR()
@@ -358,31 +362,43 @@ void transmissionISR()
 }
 
 
-void messageReceiver(int clocktime){
-	int short1 = 7894;
-	int short2 = 8105;
-	int long1 = 15788;
-	int long2 = 16211;
+void messageReceiver(int clocktime, int bit){
+	int short1 = 6100;
+	int short2 = 7900;
+	int long1 = 14000;
+	int long2 = 15800;
 	static int middleTracker;
 	//assuming 1 is smaller than 2.
-	int adjClockTime = 18080 - clocktime;
 
-	if ((adjClockTime >= short1 && adjClockTime <= short2)){
+	int adjclocktime = 18080 - clocktime;
+
+	if(globalState == IDLE){
+		middleTracker = 1;
+	}else{
+	if ((adjclocktime >= short1 && adjclocktime <= short2)){
 		//it is a short bit, perform the short bit actions. 
 		if (middleTracker == 1) {
 			//if the middle tracker is true, than the last bit was also short
 			//so this finishes a bit
-			frameAdd(pinVal);
+			frameAdd(bit);
 		}
 
 		middleTracker ^= 1; //flip it always, for short bits
-	}else if ((adjClockTime >= long1 && adjClockTime <= long2) || clocktime == 0){
+	}else if ((adjclocktime >= long1 && adjclocktime <= long2) || clocktime == 18048){
 		//if it is the long case, it is ALWAYS the middle
 		middleTracker = 1;
 		//we also just finished a bit, so we add it onto the array
-		frameAdd(pinVal);
+		frameAdd(bit);
 	}else{
+		//usart transmit the times
+				usart2_putch(clocktime/10000 + 48);
+				usart2_putch((clocktime/1000)%10 + 48);
+				usart2_putch((clocktime/100)%10 + 48);
+				usart2_putch((clocktime/10)%10 + 48);
+				usart2_putch((clocktime)%10 + 48);
+				usart2_putch('\n');
 		finishFrame(); //this was invalid
+	}
 	}
 }
 
@@ -392,26 +408,22 @@ void finishFrame()
 		//finish the frame and output to USART
 		for(int i = 0; i < frameChars && i < sizeof(frame); i++){
 			usart2_putch(frame[i]);
-			frame[i] = 0;
-		}
-		//clearing a potential unfinished byte, as well
-		frame[frameChars] = 0;
-		frameChars = 0;
-	}else{
-		for(int i = 0; i < sizeof(frame); i++){
-			frame[i] = 0;
 		}
 	}
+
+	for(int i = 0; i < sizeof(frame); i++){
+		frame[i] = 0;
+	}
+	byteTracker = 0;
+	frameChars = 0;
 }
 
 void frameAdd(int bit){
-	//it's simple to add a bit to the current frame array
-	static int byteTracker = 0;
 	//0 is msb, 7 is lsb
 
 	//set the particular bit in the particular byte to make it work
-	//this assumes it should be cleared aead of time, which should be fine
-	frame[frameChars] |= ((bit&1)<<(8-byteTracker));
+	//this assumes it should be cleared ahead of time, which should be fine
+	frame[frameChars] |= ((bit&1)<<(7-byteTracker));
 
 	byteTracker = (byteTracker + 1)%8;
 	if(byteTracker == 0){

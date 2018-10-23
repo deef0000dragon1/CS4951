@@ -32,6 +32,7 @@ static int byteTracker = 0;
 volatile static char frame[32];
 
 volatile static int transmissionISRTestingMode = 0;
+volatile static int ReceiverTestingMode = 0;
 
 void initializeTimer();
 void resetTimer();
@@ -116,7 +117,7 @@ void pinISR()
 	//GEt value from the timer
 	int clockValue = *(STK_VAL);
 
-	messageReceiver(clockValue,pinVal);
+	messageReceiver(clockValue, pinVal);
 	//set the state to busy - we are getting information
 	globalState = BUSY;
 
@@ -291,7 +292,20 @@ void transmissionISR()
 				}
 				else
 				{
-					transmitChar = usart2_getch();
+					if (ReceiverTestingMode)
+					{
+						static int ReceiverRepeatTracker;
+						if (ReceiverRepeatTracker = 0)
+						{
+							transmitChar = usart2_getch();
+						}
+
+						ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 4
+					}
+					else
+					{
+						transmitChar = usart2_getch();
+					}
 				}
 				bitPosTracker = 8;
 				bitTracker = 0;
@@ -362,8 +376,8 @@ void transmissionISR()
 	*(TIM_6) |= 1;
 }
 
-
-void messageReceiver(int clocktime, int bit){
+void messageReceiver(int clocktime, int bit)
+{
 	int short1 = 6100;
 	int short2 = 7900;
 	int long1 = 14000;
@@ -372,65 +386,80 @@ void messageReceiver(int clocktime, int bit){
 
 	int adjclocktime = 18080 - clocktime;
 
-	if(globalState == IDLE){
+	if (globalState == IDLE)
+	{
 		middleTracker = 1;
-	}else{
-	if ((adjclocktime >= short1 && adjclocktime <= short2)){
-		//it is a short bit, perform the short bit actions. 
-		if (middleTracker == 1) {
-			//if the middle tracker is true, than the last bit was also short
-			//so this finishes a bit
+	}
+	else
+	{
+		if ((adjclocktime >= short1 && adjclocktime <= short2))
+		{
+			//it is a short bit, perform the short bit actions.
+			if (middleTracker == 1)
+			{
+				//if the middle tracker is true, than the last bit was also short
+				//so this finishes a bit
+				frameAdd(bit);
+			}
+
+			middleTracker ^= 1; //flip it always, for short bits
+		}
+		else if ((adjclocktime >= long1 && adjclocktime <= long2) || clocktime == 18048)
+		{
+			//if it is the long case, it is ALWAYS the middle
+			middleTracker = 1;
+			//we also just finished a bit, so we add it onto the array
 			frameAdd(bit);
 		}
-
-		middleTracker ^= 1; //flip it always, for short bits
-	}else if ((adjclocktime >= long1 && adjclocktime <= long2) || clocktime == 18048){
-		//if it is the long case, it is ALWAYS the middle
-		middleTracker = 1;
-		//we also just finished a bit, so we add it onto the array
-		frameAdd(bit);
-	}else{
-		//usart transmit the times
-				usart2_putch(clocktime/10000 + 48);
-				usart2_putch((clocktime/1000)%10 + 48);
-				usart2_putch((clocktime/100)%10 + 48);
-				usart2_putch((clocktime/10)%10 + 48);
-				usart2_putch((clocktime)%10 + 48);
-				usart2_putch('\n');
-		finishFrame(); //this was invalid
-	}
+		else
+		{
+			//usart transmit the times
+			usart2_putch(clocktime / 10000 + 48);
+			usart2_putch((clocktime / 1000) % 10 + 48);
+			usart2_putch((clocktime / 100) % 10 + 48);
+			usart2_putch((clocktime / 10) % 10 + 48);
+			usart2_putch((clocktime) % 10 + 48);
+			usart2_putch('\n');
+			finishFrame(); //this was invalid
+		}
 	}
 }
 
 void finishFrame()
 {
-	if(globalState == IDLE){
+	if (globalState == IDLE)
+	{
 		//finish the frame and output to USART
-		if(middleTracker == 1 && byteTracker == 7){
+		if (middleTracker == 1 && byteTracker == 7)
+		{
 			frame[frameChars] |= 1;
 			frameChars++;
 		}
-		for(int i = 0; i < frameChars && i < sizeof(frame); i++){
+		for (int i = 0; i < frameChars && i < sizeof(frame); i++)
+		{
 			usart2_putch(frame[i]);
 		}
 	}
 
-	for(int i = 0; i < sizeof(frame); i++){
+	for (int i = 0; i < sizeof(frame); i++)
+	{
 		frame[i] = 0;
 	}
 	byteTracker = 0;
 	frameChars = 0;
 }
 
-void frameAdd(int bit){
+void frameAdd(int bit)
+{
 	//0 is msb, 7 is lsb
 
 	//set the particular bit in the particular byte to make it work
 	//this assumes it should be cleared ahead of time, which should be fine
-	frame[frameChars] |= ((bit&1)<<(7-byteTracker));
+	frame[frameChars] |= ((bit & 1) << (7 - byteTracker));
 
-	byteTracker = (byteTracker + 1)%8;
-	if(byteTracker == 0){
-		frameChars = (frameChars + 1)%32;
+	byteTracker = (byteTracker + 1) % 8;
+	if (byteTracker == 0)
+	{
+		frameChars = (frameChars + 1) % 32;
 	}
 }

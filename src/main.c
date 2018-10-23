@@ -25,6 +25,7 @@ volatile static int bitTracker = 0;
 volatile static int sideTracker = 0;
 volatile static int continueTransmission = 0;
 volatile static int frameChars = 0;
+volatile static int middleTracker = 0;
 
 static int byteTracker = 0;
 
@@ -367,7 +368,6 @@ void messageReceiver(int clocktime, int bit){
 	int short2 = 7900;
 	int long1 = 14000;
 	int long2 = 15800;
-	static int middleTracker;
 	//assuming 1 is smaller than 2.
 
 	int adjclocktime = 18080 - clocktime;
@@ -406,6 +406,10 @@ void finishFrame()
 {
 	if(globalState == IDLE){
 		//finish the frame and output to USART
+		if(middleTracker == 1 && byteTracker == 7){
+			frame[frameChars] |= 1;
+			frameChars++;
+		}
 		for(int i = 0; i < frameChars && i < sizeof(frame); i++){
 			usart2_putch(frame[i]);
 		}

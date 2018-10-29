@@ -90,8 +90,7 @@ int main()
 
 	//test the interrupt
 	//*(TIM_6 + 5) |= 1;
-	while (1)
-		;
+	while (1);
 }
 
 void pinInit(void)
@@ -457,11 +456,15 @@ void finishFrame()
 	if (globalState == IDLE)
 	{
 		//finish the frame and output to USART
+		//add spare 1 to end of frame. 
 		if (middleTracker == 1 && byteTracker == 7)
 		{
 			frame[frameChars] |= 1;
 			frameChars++;
 		}
+
+		//outut to usart. 
+		if (frame[i] == )
 		for (int i = 0; i < frameChars && i < sizeof(frame); i++)
 		{
 			usart2_putch(frame[i]);
@@ -475,6 +478,8 @@ void finishFrame()
 	byteTracker = 0;
 	frameChars = 0;
 }
+
+
 
 void frameAdd(int bit)
 {

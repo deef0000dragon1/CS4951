@@ -27,6 +27,17 @@ volatile static int continueTransmission = 0;
 volatile static int frameChars = 0;
 volatile static int middleTracker = 0;
 
+typedef struct{
+	char synch;
+	char version;
+	char source;
+	char destination;
+	char length;
+	char crcFlag;
+	char *message;
+	char CRC8FCS;
+} Packet;
+
 static int byteTracker = 0;
 
 volatile static char frame[32];
@@ -464,4 +475,26 @@ void frameAdd(int bit)
 	{
 		frameChars = (frameChars + 1) % 32;
 	}
+}
+
+Packet* initPacket(char dest, char length, char* message, int isCRCOn){
+	Packet p;
+	p.synch = 0x55;
+	p.version = 0x01;
+	//robert = 10, jeffrey = 11
+	p.source = 0x10;
+	p.destination = dest;
+	p.length = length;
+	if(isCRCOn){
+		p.crcFlag = 0x01;
+		p.CRC8FCS = crcCalculate(p);
+	}else{
+		//if it's off, set flag to 0
+		p.crcFlag = 0x00;
+		p.CRC8FCS = 0xAA;
+	}
+}
+
+char crcCalculate(Packet* pack){
+	return 0x00; //for jeff idk
 }

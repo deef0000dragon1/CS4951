@@ -27,13 +27,13 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: transistorStuff.elf
+all: Networking1.elf
 
 # Tool invocations
-transistorStuff.elf: $(OBJS) $(USER_OBJS) C:\Users\gelharrs\workspace\transistorStuff\LinkerScript.ld
+Networking1.elf: $(OBJS) $(USER_OBJS) C:\Users\gelharrs\workspace\Networking1\LinkerScript.ld
 	@echo 'Building target: $@'
 	@echo 'Invoking: MCU GCC Linker'
-	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T"C:\Users\gelharrs\workspace\transistorStuff\LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "transistorStuff.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
+	arm-none-eabi-gcc -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -T"C:\Users\gelharrs\workspace\Networking1\LinkerScript.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "Networking1.elf" @"objects.list" $(USER_OBJS) $(LIBS) -lm
 	@echo 'Finished building target: $@'
 	@echo ' '
 	$(MAKE) --no-print-directory post-build
@@ -45,8 +45,8 @@ clean:
 
 post-build:
 	-@echo 'Generating binary and Printing size information:'
-	arm-none-eabi-objcopy -O binary "transistorStuff.elf" "transistorStuff.bin"
-	arm-none-eabi-size "transistorStuff.elf"
+	arm-none-eabi-objcopy -O binary "Networking1.elf" "Networking1.bin"
+	arm-none-eabi-size "Networking1.elf"
 	-@echo ' '
 
 .PHONY: all clean dependents

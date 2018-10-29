@@ -45,7 +45,7 @@ static int byteTracker = 0;
 volatile static char frame[32];
 
 volatile static int transmissionISRTestingMode = 0;
-volatile static int ReceiverTestingMode = 0;
+volatile static int receiverTestingMode = 0;
 
 void initializeTimer();
 void resetTimer();
@@ -59,6 +59,8 @@ void transmissionISR();
 void finishFrame();
 void messageReceiver(int clocktime, int bit);
 void frameAdd(int bit);
+Packet* initPacket(char dest, char length, char *message, int isCRCOn);
+char crcCalculate(Packet *pack);
 
 int main()
 {
@@ -310,17 +312,17 @@ void transmissionISR()
 					}
 					else
 					{
-						if (ReceiverTestingMode)
+						if (receiverTestingMode)
 						{
-							static int ReceiverRepeatTracker;
+							static int receiverRepeatTracker;
 							transmitChar = (transmitChar + 1);
 
-							if (ReceiverRepeatTracker = 0)
+							if (receiverRepeatTracker == 0)
 							{
 								transmitChar = usart2_getch();
 							}
 
-							ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 43;
+							receiverRepeatTracker = (receiverRepeatTracker + 1) % 43;
 						}
 						else
 						{
@@ -489,29 +491,30 @@ void frameAdd(int bit)
 	}
 }
 
-Packet *initPacket(char dest, char length, char *message, int isCRCOn)
+Packet* initPacket(char dest, char length, char *message, int isCRCOn)
 {
-	Packet p;
-	p.synch = 0x55;
-	p.version = 0x01;
+	Packet* p = malloc(sizeof(Packet));
+	p->synch = 0x55;
+	p->version = 0x01;
 	//robert = 10, jeffrey = 11
-	p.source = 0x10;
-	p.destination = dest;
-	p.length = length;
+	p->source = 0x10;
+	p->destination = dest;
+	p->length = length;
 	if (isCRCOn)
 	{
-		p.crcFlag = 0x01;
-		p.CRC8FCS = crcCalculate(p);
+		p->crcFlag = 0x01;
+		p->CRC8FCS = crcCalculate(p);
 	}
 	else
 	{
 		//if it's off, set flag to 0
-		p.crcFlag = 0x00;
-		p.CRC8FCS = 0xAA;
+		p->crcFlag = 0x00;
+		p->CRC8FCS = 0xAA;
 	}
+	return p;
 }
 
 char crcCalculate(Packet *pack)
 {
-	return 0x00; //for jeff idk
+	return 0x00;
 }

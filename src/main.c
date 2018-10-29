@@ -295,12 +295,14 @@ void transmissionISR()
 					if (ReceiverTestingMode)
 					{
 						static int ReceiverRepeatTracker;
+						transmitChar = (transmitChar + 1);
+
 						if (ReceiverRepeatTracker = 0)
 						{
 							transmitChar = usart2_getch();
 						}
 
-						ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 4
+						ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 43;
 					}
 					else
 					{

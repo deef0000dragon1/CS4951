@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define CRC_CHECK 1000000111
+
 //a definition of an enum for the busy state
 enum STATE
 {
@@ -28,6 +30,7 @@ volatile static int frameChars = 0;
 volatile static int middleTracker = 0;
 
 volatile static int backoffClock = 0;
+
 typedef struct
 {
 	char synch;
@@ -60,7 +63,7 @@ void finishFrame();
 void messageReceiver(int clocktime, int bit);
 void frameAdd(int bit);
 Packet* initPacket(char dest, char length, char *message, int isCRCOn);
-char crcCalculate(Packet *pack);
+char crcCalculate(char array[], int len);
 
 int main()
 {
@@ -508,7 +511,7 @@ Packet* initPacket(char dest, char length, char *message, int isCRCOn)
 	if (isCRCOn)
 	{
 		p->crcFlag = 0x01;
-		p->CRC8FCS = crcCalculate(p);
+		//p->CRC8FCS = crcCalculate(p);
 	}
 	else
 	{
@@ -519,7 +522,21 @@ Packet* initPacket(char dest, char length, char *message, int isCRCOn)
 	return p;
 }
 
-char crcCalculate(Packet *pack)
+char crcCalculate(char array[], int len)
 {
-	return 0x00;
+	for(int i = 0; i < len-8; i++){
+		int currChar = i/8;
+		int currBit = i%8;
+
+		if(array[currChar]&(1<<currBit)){
+			//we have a 1
+			//so, xor the crc
+			char upperCRC = (char)(CRC_CHECK>>(currBit+1));
+			char lowerCRC = (char)(CRC_CHECK<<currBit);
+			array[currChar] ^= upperCRC;
+			array[currChar+1] ^= lowerCRC;
+		}
+		//else do nothing
+	}
+	return array[len];
 }

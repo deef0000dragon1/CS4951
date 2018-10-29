@@ -27,7 +27,9 @@ volatile static int continueTransmission = 0;
 volatile static int frameChars = 0;
 volatile static int middleTracker = 0;
 
-typedef struct{
+volatile static int backoffClock = 0;
+typedef struct
+{
 	char synch;
 	char version;
 	char source;
@@ -218,6 +220,9 @@ void timerISR()
 			break;
 		case COLLISION:
 			globalState = COLLISION;
+			if (backoffClock <= 0) {
+				backoffClock = rand()%1000;
+			}
 			resetTimer();
 			break;
 		case BUSY:
@@ -277,116 +282,123 @@ void setOutputPin(int val)
 
 void transmissionISR()
 {
-	if (globalState != COLLISION)
-	{ //if not in a colission state, begin the output check code.
+	if (backoffClock <= 0)
+	{
+		if (globalState != COLLISION)
+		{ //if not in a colission state, begin the output check code.
 
-		//check if new transmission (idle) or if continuing transmission
-		if (globalState == IDLE || continueTransmission == 1)
-		{
-
-			//if new transmission, set continue bit so that, can transmit when line is busy from self.
-			if (globalState == IDLE)
+			//check if new transmission (idle) or if continuing transmission
+			if (globalState == IDLE || continueTransmission == 1)
 			{
-				continueTransmission = 1;
-			}
 
-			if (bitPosTracker == 0)
-			{ //if there is bit position left to get, get a new character and update the tracking information.
-
-				//sync pulse high
-				*(GPIO_A + GPIO_BSRR) = (0x1 << 4);
-				//*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
-
-				if (transmissionISRTestingMode)
+				//if new transmission, set continue bit so that, can transmit when line is busy from self.
+				if (globalState == IDLE)
 				{
-					transmitChar = 'M';
+					continueTransmission = 1;
 				}
-				else
-				{
-					if (ReceiverTestingMode)
-					{
-						static int ReceiverRepeatTracker;
-						transmitChar = (transmitChar + 1);
 
-						if (ReceiverRepeatTracker = 0)
+				if (bitPosTracker == 0)
+				{ //if there is bit position left to get, get a new character and update the tracking information.
+
+					//sync pulse high
+					*(GPIO_A + GPIO_BSRR) = (0x1 << 4);
+					//*(GPIO_A + GPIO_BSRR) = (0x1 << 8);
+
+					if (transmissionISRTestingMode)
+					{
+						transmitChar = 'M';
+					}
+					else
+					{
+						if (ReceiverTestingMode)
+						{
+							static int ReceiverRepeatTracker;
+							transmitChar = (transmitChar + 1);
+
+							if (ReceiverRepeatTracker = 0)
+							{
+								transmitChar = usart2_getch();
+							}
+
+							ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 43;
+						}
+						else
 						{
 							transmitChar = usart2_getch();
 						}
+					}
+					bitPosTracker = 8;
+					bitTracker = 0;
+					sideTracker = 0;
 
-						ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 43;
-					}
-					else
-					{
-						transmitChar = usart2_getch();
-					}
+					//sync pulse low.
+					*(GPIO_A + GPIO_BSRR) = (0x1 << 20);
+					//*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
 				}
-				bitPosTracker = 8;
-				bitTracker = 0;
-				sideTracker = 0;
 
-				//sync pulse low.
-				*(GPIO_A + GPIO_BSRR) = (0x1 << 20);
-				//*(GPIO_A + GPIO_BSRR) = (0x1 << 24);
-			}
-
-			//if the transmission charcter is not zero, output.
-			if (transmitChar != 0)
-			{
-
-				if (sideTracker == 0)
+				//if the transmission charcter is not zero, output.
+				if (transmitChar != 0)
 				{
-					//if the side is zero, (first side,)
-					bitTracker = (transmitChar >> (bitPosTracker - 1)) & 1;
-					//get the new bit
-					//drop the tracker by one
-					if (bitTracker == 1)
-					{ //and output the first side of the data.
-						setOutputPin(0);
+
+					if (sideTracker == 0)
+					{
+						//if the side is zero, (first side,)
+						bitTracker = (transmitChar >> (bitPosTracker - 1)) & 1;
+						//get the new bit
+						//drop the tracker by one
+						if (bitTracker == 1)
+						{ //and output the first side of the data.
+							setOutputPin(0);
+						}
+						else
+						{
+							setOutputPin(1);
+						}
+						sideTracker = 1;
 					}
 					else
 					{
-						setOutputPin(1);
+						//if its not a zero, its the second side.
+						if (bitTracker == 1)
+						{ //just output the second side of the data.
+							setOutputPin(1);
+						}
+						else
+						{
+							setOutputPin(0);
+						}
+						bitPosTracker--;
+
+						sideTracker = 0;
 					}
-					sideTracker = 1;
 				}
 				else
 				{
-					//if its not a zero, its the second side.
-					if (bitTracker == 1)
-					{ //just output the second side of the data.
-						setOutputPin(1);
-					}
-					else
-					{
-						setOutputPin(0);
-					}
-					bitPosTracker--;
-
-					sideTracker = 0;
+					setOutputPin(1);
+					bitPosTracker = 0;
 				}
 			}
 			else
 			{
-				setOutputPin(1);
+				//if the transmission character is zero, drop the line, and make it so that it checks again next time.
 				bitPosTracker = 0;
+				setOutputPin(1);
 			}
 		}
 		else
-		{
-			//if the transmission character is zero, drop the line, and make it so that it checks again next time.
-			bitPosTracker = 0;
+		{ // if in the collision state, drop all output and release the line.
+			continueTransmission = 0;
 			setOutputPin(1);
 		}
+
+		//*(TIM_6 + 5) &= ~(1<<0);
+		*(TIM_6 + TIM_SR) &= ~(1 << 0);
+		*(TIM_6) |= 1;
 	}
 	else
-	{ // if in the collision state, drop all output and release the line.
-		continueTransmission = 0;
-		setOutputPin(1);
+	{
+		backoffClock--;
 	}
-
-	//*(TIM_6 + 5) &= ~(1<<0);
-	*(TIM_6 + TIM_SR) &= ~(1 << 0);
-	*(TIM_6) |= 1;
 }
 
 void messageReceiver(int clocktime, int bit)
@@ -477,7 +489,8 @@ void frameAdd(int bit)
 	}
 }
 
-Packet* initPacket(char dest, char length, char* message, int isCRCOn){
+Packet *initPacket(char dest, char length, char *message, int isCRCOn)
+{
 	Packet p;
 	p.synch = 0x55;
 	p.version = 0x01;
@@ -485,16 +498,20 @@ Packet* initPacket(char dest, char length, char* message, int isCRCOn){
 	p.source = 0x10;
 	p.destination = dest;
 	p.length = length;
-	if(isCRCOn){
+	if (isCRCOn)
+	{
 		p.crcFlag = 0x01;
 		p.CRC8FCS = crcCalculate(p);
-	}else{
+	}
+	else
+	{
 		//if it's off, set flag to 0
 		p.crcFlag = 0x00;
 		p.CRC8FCS = 0xAA;
 	}
 }
 
-char crcCalculate(Packet* pack){
+char crcCalculate(Packet *pack)
+{
 	return 0x00; //for jeff idk
 }

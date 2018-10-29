@@ -62,7 +62,7 @@ void transmissionISR();
 void finishFrame();
 void messageReceiver(int clocktime, int bit);
 void frameAdd(int bit);
-Packet* initPacket(char dest, char length, char *message, int isCRCOn);
+Packet *initPacket(char dest, char length, char *message, int isCRCOn);
 char crcCalculate(char array[], int len);
 
 int main()
@@ -93,7 +93,8 @@ int main()
 
 	//test the interrupt
 	//*(TIM_6 + 5) |= 1;
-	while (1);
+	while (1)
+		;
 }
 
 void pinInit(void)
@@ -224,8 +225,9 @@ void timerISR()
 			break;
 		case COLLISION:
 			globalState = COLLISION;
-			if (backoffClock <= 0) {
-				backoffClock = rand()%1000;
+			if (backoffClock <= 0)
+			{
+				backoffClock = rand() % 1000;
 			}
 			resetTimer();
 			break;
@@ -459,18 +461,23 @@ void finishFrame()
 	if (globalState == IDLE)
 	{
 		//finish the frame and output to USART
-		//add spare 1 to end of frame. 
+		//add spare 1 to end of frame.
 		if (middleTracker == 1 && byteTracker == 7)
 		{
 			frame[frameChars] |= 1;
 			frameChars++;
 		}
 
-		//outut to usart. 
-		if (frame[i] == )
-		for (int i = 0; i < frameChars && i < sizeof(frame); i++)
+		//outut to usart.
+		if (frame[3] == 0x10)
 		{
-			usart2_putch(frame[i]);
+			if (crcCalculate(frame, frame[4] + 7) == 0)
+			{
+				for (int i = 0; i < frame[4]; i++)
+				{
+					usart2_putch(frame[i+6]);
+				}
+			}
 		}
 	}
 
@@ -481,8 +488,6 @@ void finishFrame()
 	byteTracker = 0;
 	frameChars = 0;
 }
-
-
 
 void frameAdd(int bit)
 {
@@ -499,9 +504,9 @@ void frameAdd(int bit)
 	}
 }
 
-Packet* initPacket(char dest, char length, char *message, int isCRCOn)
+Packet *initPacket(char dest, char length, char *message, int isCRCOn)
 {
-	Packet* p = malloc(sizeof(Packet));
+	Packet *p = malloc(sizeof(Packet));
 	p->synch = 0x55;
 	p->version = 0x01;
 	//robert = 10, jeffrey = 11
@@ -524,17 +529,19 @@ Packet* initPacket(char dest, char length, char *message, int isCRCOn)
 
 char crcCalculate(char array[], int len)
 {
-	for(int i = 0; i < len-8; i++){
-		int currChar = i/8;
-		int currBit = i%8;
+	for (int i = 0; i < len - 8; i++)
+	{
+		int currChar = i / 8;
+		int currBit = i % 8;
 
-		if(array[currChar]&(1<<currBit)){
+		if (array[currChar] & (1 << currBit))
+		{
 			//we have a 1
 			//so, xor the crc
-			char upperCRC = (char)(CRC_CHECK>>(currBit+1));
-			char lowerCRC = (char)(CRC_CHECK<<currBit);
+			char upperCRC = (char)(CRC_CHECK >> (currBit + 1));
+			char lowerCRC = (char)(CRC_CHECK << currBit);
 			array[currChar] ^= upperCRC;
-			array[currChar+1] ^= lowerCRC;
+			array[currChar + 1] ^= lowerCRC;
 		}
 		//else do nothing
 	}

@@ -5,7 +5,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CRC_CHECK 1000000111
+#define POLYNOMIAL 0x107    // 100000111
+typedef char crc;
+#define WIDTH  (8 * sizeof(crc))
+#define TOPBIT (1 << (WIDTH - 1))
+crc crcTable[256];
 
 //a definition of an enum for the busy state
 enum STATE
@@ -71,13 +75,16 @@ void finishFrame();
 void messageReceiver(int clocktime, int bit);
 void frameAdd(int bit);
 Packet *initPacket(char dest, char length, char *message, int isCRCOn);
-char crcCalculate(char array[], int len);
+void crcInit();
+crc crcFast(char const message[], int nBytes);
 
 int main()
 {
 	//initialization of the gpio pins and the timer here first
 
 	pinInit();
+
+	crcInit();
 
 	//initialize the timer for interrupt
 
@@ -346,8 +353,8 @@ void transmissionISR()
 									currMessReceInt++;
 									currMessLen++;
 									if(*(currMessage+currMessReceInt-1)=='\n' || *(currMessage+currMessReceInt-1)=='\r'){
-										*(currMessage+currMessReceInt-1)=0;
-										sendingPacket = initPacket(0x8, currMessLen-1, currMessage, 1);
+										currMessLen--;
+										sendingPacket = initPacket(0x10, currMessLen, currMessage, 1);
 										isTransmitting = 1;
 										currMessReceInt = 0;
 										currMessLen = 0;
@@ -530,7 +537,8 @@ void finishFrame()
 		//outut to usart.
 		if (frame[3] == 0x10)
 		{
-			if (crcCalculate(frame, frame[4] + 7) == 0)
+			char* mess = &frame[6];
+			if (crcFast(mess, frame[4]) == 0)
 			{
 				for (int i = 0; i < frame[4]; i++)
 				{
@@ -577,8 +585,8 @@ Packet *initPacket(char dest, char length, char *message, int isCRCOn)
 	{
 		p->crcFlag = 0x01;
 		char *messCpy = malloc(257);
-		memcpy(messCpy, message, (length+1));
-		p->CRC8FCS = crcCalculate(messCpy, 8*(length+1));
+		memcpy(messCpy, message, (length));
+		p->CRC8FCS = (char)crcFast(messCpy, (length));
 		free(messCpy);
 	}
 	else
@@ -590,23 +598,43 @@ Packet *initPacket(char dest, char length, char *message, int isCRCOn)
 	return p;
 }
 
-char crcCalculate(char array[], int len)
-{
-	for (int i = 0; i < len - 8; i++)
-	{
-		int currChar = i / 8;
-		int currBit = i % 8;
+void crcInit(void) {
+    crc remainder;
 
-		if (array[currChar] & (1 << currBit))
-		{
-			//we have a 1
-			//so, xor the crc
-			char upperCRC = (char)(CRC_CHECK >> (currBit + 1));
-			char lowerCRC = (char)(CRC_CHECK << currBit);
-			array[currChar] ^= upperCRC;
-			array[currChar + 1] ^= lowerCRC;
-		}
-		//else do nothing
-	}
-	return array[len];
+    //Compute the remainder of each possible dividend.
+    for (int dividend = 0; dividend < 256; ++dividend) {
+        //Start with the dividend followed by zeros.
+        remainder = dividend << (WIDTH - 8);
+
+        //Perform modulo-2 division, a bit at a time.
+        for (char bit = 8; bit > 0; --bit) {
+            //Try to divide the current data bit.
+            if (remainder & TOPBIT) {
+                remainder = (remainder << 1) ^ POLYNOMIAL;
+            } else {
+                remainder = (remainder << 1);
+            }
+        }
+
+        //Store the result into the table.
+        crcTable[dividend] = remainder;
+    }
+
+}
+
+//message is an array of chars
+//nBytes is the number of chars in message, or "length"
+crc crcFast(char const message[], int nBytes) {
+    char data;
+    crc remainder = 0;
+
+    //Divide the message by the polynomial, a byte at a time.
+    for (int byte = 0; byte < nBytes; ++byte) {
+        data = message[byte] ^ (remainder >> (WIDTH - 8));
+        remainder = crcTable[data] ^ (remainder << 8);
+    }
+
+    //The final remainder is the CRC.
+    return (remainder);
+
 }

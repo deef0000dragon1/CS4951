@@ -3,6 +3,7 @@
 #include "uart_driver.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define CRC_CHECK 1000000111
 
@@ -45,6 +46,13 @@ typedef struct
 
 static int byteTracker = 0;
 
+volatile static Packet* sendingPacket;
+volatile static char* currMessage;
+volatile static int currMessLen = 0;
+volatile static int currMessReceInt = 0;
+volatile static int currMessTransInt = 0;
+volatile static int isTransmitting = 0;
+
 volatile static char frame[32];
 
 volatile static int transmissionISRTestingMode = 0;
@@ -81,6 +89,8 @@ int main()
 
 	//enable tim6 in nvic
 	*(NVIC_ISER1) |= (1 << 22);
+
+	currMessage = currMessage = calloc(256+1, 1);
 
 	//enable in software IMPORTANT!!!
 	asm("CPSIE i\n\t");
@@ -330,7 +340,56 @@ void transmissionISR()
 						}
 						else
 						{
-							transmitChar = usart2_getch();
+							if(!isTransmitting){
+								*(currMessage+currMessReceInt) = usart2_getch();
+								if(*(currMessage+currMessReceInt)!=0){
+									currMessReceInt++;
+									currMessLen++;
+									if(*(currMessage+currMessReceInt-1)=='\n' || *(currMessage+currMessReceInt-1)=='\r'){
+										*(currMessage+currMessReceInt-1)=0;
+										sendingPacket = initPacket(0x8, currMessLen-1, currMessage, 1);
+										isTransmitting = 1;
+										currMessReceInt = 0;
+										currMessLen = 0;
+									}
+								}
+								transmitChar = 0;
+							}else{
+								int endofPacket = (int)((sendingPacket->length)+6);
+								switch(currMessTransInt){
+									case 0: transmitChar = sendingPacket->synch; currMessTransInt++;
+									break;
+									case 1: transmitChar = sendingPacket->version; currMessTransInt++;
+									break;
+									case 2: transmitChar = sendingPacket->source; currMessTransInt++;
+									break;
+									case 3: transmitChar = sendingPacket->destination; currMessTransInt++;
+									break;
+									case 4: transmitChar = sendingPacket->length; currMessTransInt++;
+									break;
+									case 5: transmitChar = sendingPacket->crcFlag; currMessTransInt++;
+									break;
+
+									default:
+										if(currMessTransInt == endofPacket){
+											transmitChar = sendingPacket->CRC8FCS;
+											isTransmitting = 0;
+											free(currMessage);
+											free(sendingPacket);
+											currMessTransInt = 0;
+											currMessage = calloc(256 + 1, 1);
+											break;
+										}else{
+
+											//we make the dangerous assumption that, in all other cases, we're in the message
+											// 	   *chuckles* I'm in danger!
+											transmitChar = *(sendingPacket->message + currMessTransInt - 6);
+											currMessTransInt++;
+										}
+									break;
+								}
+
+							}
 						}
 					}
 					bitPosTracker = 8;
@@ -513,10 +572,14 @@ Packet *initPacket(char dest, char length, char *message, int isCRCOn)
 	p->source = 0x10;
 	p->destination = dest;
 	p->length = length;
+	p->message = message;
 	if (isCRCOn)
 	{
 		p->crcFlag = 0x01;
-		//p->CRC8FCS = crcCalculate(p);
+		char *messCpy = malloc(257);
+		memcpy(messCpy, message, (length+1));
+		p->CRC8FCS = crcCalculate(messCpy, 8*(length+1));
+		free(messCpy);
 	}
 	else
 	{

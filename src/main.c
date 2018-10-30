@@ -29,10 +29,10 @@ volatile static int middleTracker = 0;
 
 static int byteTracker = 0;
 
-volatile static char frame[32];
+volatile static char frame[64];
 
 volatile static int transmissionISRTestingMode = 0;
-volatile static int ReceiverTestingMode = 0;
+volatile static int ReceiverTestingMode = 1;
 
 void initializeTimer();
 void resetTimer();
@@ -213,6 +213,7 @@ void timerISR()
 			if (pinVal)
 			{ //if input is 1, set state idle
 				globalState = IDLE;
+				finishFrame();
 			}
 			else
 			{ //else set state collision.
@@ -279,8 +280,7 @@ void transmissionISR()
 				continueTransmission = 1;
 			}
 
-			if (bitPosTracker == 0)
-			{ //if there is bit position left to get, get a new character and update the tracking information.
+			if (bitPosTracker == 0){ //if there is bit position left to get, get a new character and update the tracking information.
 
 				//sync pulse high
 				*(GPIO_A + GPIO_BSRR) = (0x1 << 4);
@@ -288,19 +288,26 @@ void transmissionISR()
 
 				if (transmissionISRTestingMode)
 				{
-					transmitChar = 'M';
+					if(transmitChar == 'M'){
+						transmitChar = 0;
+					}else{
+						transmitChar = 'M';
+					}
 				}
 				else
 				{
 					if (ReceiverTestingMode)
 					{
 						static int ReceiverRepeatTracker;
-						if (ReceiverRepeatTracker = 0)
+						transmitChar++;
+						if (ReceiverRepeatTracker == 0)
 						{
-							transmitChar = usart2_getch();
+							transmitChar = 0;
+						}else if(ReceiverRepeatTracker == 1){
+							transmitChar = '0';
 						}
 
-						ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 4
+						ReceiverRepeatTracker = (ReceiverRepeatTracker + 1) % 43;
 					}
 					else
 					{
@@ -379,9 +386,9 @@ void transmissionISR()
 void messageReceiver(int clocktime, int bit)
 {
 	int short1 = 6100;
-	int short2 = 7900;
+	int short2 = 7950;
 	int long1 = 14000;
-	int long2 = 15800;
+	int long2 = 15950;
 	//assuming 1 is smaller than 2.
 
 	int adjclocktime = 18080 - clocktime;
@@ -413,6 +420,7 @@ void messageReceiver(int clocktime, int bit)
 		}
 		else
 		{
+			/*
 			//usart transmit the times
 			usart2_putch(clocktime / 10000 + 48);
 			usart2_putch((clocktime / 1000) % 10 + 48);
@@ -421,6 +429,7 @@ void messageReceiver(int clocktime, int bit)
 			usart2_putch((clocktime) % 10 + 48);
 			usart2_putch('\n');
 			finishFrame(); //this was invalid
+			*/
 		}
 	}
 }
@@ -460,6 +469,6 @@ void frameAdd(int bit)
 	byteTracker = (byteTracker + 1) % 8;
 	if (byteTracker == 0)
 	{
-		frameChars = (frameChars + 1) % 32;
+		frameChars = (frameChars + 1) % 64;
 	}
 }

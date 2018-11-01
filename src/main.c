@@ -56,8 +56,9 @@ volatile static int currMessLen = 0;
 volatile static int currMessReceInt = 0;
 volatile static int currMessTransInt = 0;
 volatile static int isTransmitting = 0;
+static int clearStuff = 0;
 
-volatile static char frame[32];
+volatile static char frame[263];
 
 volatile static int transmissionISRTestingMode = 0;
 volatile static int receiverTestingMode = 0;
@@ -252,6 +253,7 @@ void timerISR()
 			if (pinVal)
 			{ //if input is 1, set state idle
 				globalState = IDLE;
+				finishFrame();
 			}
 			else
 			{ //else set state collision.
@@ -320,8 +322,7 @@ void transmissionISR()
 					continueTransmission = 1;
 				}
 
-				if (bitPosTracker == 0)
-				{ //if there is bit position left to get, get a new character and update the tracking information.
+				if (bitPosTracker == 0){ //if there is bit position left to get, get a new character and update the tracking information.
 
 					//sync pulse high
 					*(GPIO_A + GPIO_BSRR) = (0x1 << 4);
@@ -348,6 +349,12 @@ void transmissionISR()
 						else
 						{
 							if(!isTransmitting){
+								if(clearStuff){
+									free(sendingPacket);
+									free(currMessage);
+									currMessage = calloc(256+1, 1);
+									clearStuff = 0;
+								}
 								*(currMessage+currMessReceInt) = usart2_getch();
 								if(*(currMessage+currMessReceInt)!=0){
 									currMessReceInt++;
@@ -357,12 +364,10 @@ void transmissionISR()
 										sendingPacket = initPacket(0x10, currMessLen, currMessage, 1);
 										isTransmitting = 1;
 										currMessReceInt = 0;
-										currMessLen = 0;
 									}
 								}
 								transmitChar = 0;
 							}else{
-								int endofPacket = (int)((sendingPacket->length)+6);
 								switch(currMessTransInt){
 									case 0: transmitChar = sendingPacket->synch; currMessTransInt++;
 									break;
@@ -378,13 +383,12 @@ void transmissionISR()
 									break;
 
 									default:
-										if(currMessTransInt == endofPacket){
+										if(currMessTransInt == currMessLen+6){
 											transmitChar = sendingPacket->CRC8FCS;
 											isTransmitting = 0;
-											free(currMessage);
-											free(sendingPacket);
+											clearStuff = 1;
 											currMessTransInt = 0;
-											currMessage = calloc(256 + 1, 1);
+											currMessLen = 0;
 											break;
 										}else{
 
@@ -476,9 +480,9 @@ void transmissionISR()
 void messageReceiver(int clocktime, int bit)
 {
 	int short1 = 6100;
-	int short2 = 7900;
+	int short2 = 8500;
 	int long1 = 14000;
-	int long2 = 15800;
+	int long2 = 15950;
 	//assuming 1 is smaller than 2.
 
 	int adjclocktime = 18080 - clocktime;
@@ -510,6 +514,7 @@ void messageReceiver(int clocktime, int bit)
 		}
 		else
 		{
+			/*
 			//usart transmit the times
 			usart2_putch(clocktime / 10000 + 48);
 			usart2_putch((clocktime / 1000) % 10 + 48);
@@ -517,7 +522,11 @@ void messageReceiver(int clocktime, int bit)
 			usart2_putch((clocktime / 10) % 10 + 48);
 			usart2_putch((clocktime) % 10 + 48);
 			usart2_putch('\n');
-			finishFrame(); //this was invalid
+			*/
+
+
+			//finishFrame(); //this was invalid
+
 		}
 	}
 }
@@ -538,12 +547,15 @@ void finishFrame()
 		if (frame[3] == 0x10)
 		{
 			char* mess = &frame[6];
-			if (crcFast(mess, frame[4]) == 0)
+			//what the fuck?
+			//*(mess + frame[4]-1) ^= 1;
+			if (crcFast(mess, frame[4]+1) == 0)
 			{
 				for (int i = 0; i < frame[4]; i++)
 				{
 					usart2_putch(frame[i+6]);
 				}
+				usart2_putch('\n');
 			}
 		}
 	}
@@ -567,7 +579,7 @@ void frameAdd(int bit)
 	byteTracker = (byteTracker + 1) % 8;
 	if (byteTracker == 0)
 	{
-		frameChars = (frameChars + 1) % 32;
+		frameChars = (frameChars + 1) % 263;
 	}
 }
 

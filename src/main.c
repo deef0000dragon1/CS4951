@@ -67,7 +67,7 @@ volatile static char frame[263];
 volatile static int transmissionISRTestingMode = 0;
 volatile static int receiverTestingMode = 0;
 volatile static int crcFlagVariable = 1;
-volatile static int FullPacketOutput = 0;
+volatile static int FullPacketOutput = 1;
 
 void initializeTimer();
 void resetTimer();
@@ -550,21 +550,42 @@ void finishFrame()
 		}
 
 		//outut to usart.
-		if (frame[3] == RECIEVE_ADDR)
-		{
-			char* mess = &frame[6];
-			//what the fuck?
-			//*(mess + frame[4]-1) ^= 1;
-			if (crcFast(mess, frame[4]+1) == 0)
-			{
-				for (int i = 0; i < frame[4]; i++)
-				{
-					usart2_putch(frame[i+6]);
+		if(FullPacketOutput && frame[4]!=0){
+			for(int i = 0; i < frame[4]+7; i++){
+				//upper nibble
+				int uNib = frame[i]>>4;
+				int lNib = frame[i]%16;
+
+				if(uNib > 9){
+					usart2_putch(uNib+55);
+				}else{
+					usart2_putch(uNib+48);
 				}
-				usart2_putch('\n');
+
+				if(lNib > 9){
+					usart2_putch(lNib+55);
+				}else{
+					usart2_putch(lNib+48);
+				}
+				usart2_putch('-');
+			}
+			usart2_putch('\n');
+		}else{
+			if (frame[3] == RECIEVE_ADDR){
+					char* mess = &frame[6];
+					//what the fuck?
+					//*(mess + frame[4]-1) ^= 1;
+					if (crcFast(mess, frame[4]+1) == 0)
+					{
+						for (int i = 0; i < frame[4]; i++)
+						{
+							usart2_putch(frame[i+6]);
+						}
+						usart2_putch('\n');
+					}
+				}
 			}
 		}
-	}
 
 	for (int i = 0; i < sizeof(frame); i++)
 	{

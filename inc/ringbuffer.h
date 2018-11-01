@@ -10,7 +10,7 @@
 
 #define bitsPerSecond 1920
 #define SwapTimeMS 20
-#define BUF_SIZE 50
+#define BUF_SIZE 250
 
 typedef struct myBuffer{
 	unsigned int put;

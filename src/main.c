@@ -252,6 +252,7 @@ void timerISR()
 			if (backoffClock <= 0)
 			{
 				backoffClock = rand() % 1000;
+				currMessTransInt = 0;
 			}
 			resetTimer();
 			break;

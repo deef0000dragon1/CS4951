@@ -67,7 +67,7 @@ volatile static char frame[263];
 volatile static int transmissionISRTestingMode = 0;
 volatile static int receiverTestingMode = 0;
 volatile static int crcFlagVariable = 1;
-volatile static int FullPacketOutput = 1;
+volatile static int FullPacketOutput = 0;
 
 void initializeTimer();
 void resetTimer();
@@ -575,7 +575,7 @@ void finishFrame()
 					char* mess = &frame[6];
 					//what the fuck?
 					//*(mess + frame[4]-1) ^= 1;
-					if (crcFast(mess, frame[4]+1) == 0)
+					if ((crcFast(mess, frame[4]+1) == 0) || (frame[5] == 0))
 					{
 						for (int i = 0; i < frame[4]; i++)
 						{

@@ -9,6 +9,10 @@
 typedef char crc;
 #define WIDTH  (8 * sizeof(crc))
 #define TOPBIT (1 << (WIDTH - 1))
+
+#define RECIEVE_ADDR 0x10
+#define SEND_ADDR 0x10
+
 crc crcTable[256];
 
 //a definition of an enum for the busy state
@@ -62,6 +66,8 @@ volatile static char frame[263];
 
 volatile static int transmissionISRTestingMode = 0;
 volatile static int receiverTestingMode = 0;
+volatile static int crcFlagVariable = 1;
+volatile static int FullPacketOutput = 0;
 
 void initializeTimer();
 void resetTimer();
@@ -361,7 +367,7 @@ void transmissionISR()
 									currMessLen++;
 									if(*(currMessage+currMessReceInt-1)=='\n' || *(currMessage+currMessReceInt-1)=='\r'){
 										currMessLen--;
-										sendingPacket = initPacket(0x10, currMessLen, currMessage, 1);
+										sendingPacket = initPacket(SEND_ADDR, currMessLen, currMessage, crcFlagVariable);
 										isTransmitting = 1;
 										currMessReceInt = 0;
 									}
@@ -544,7 +550,7 @@ void finishFrame()
 		}
 
 		//outut to usart.
-		if (frame[3] == 0x10)
+		if (frame[3] == RECIEVE_ADDR)
 		{
 			char* mess = &frame[6];
 			//what the fuck?
